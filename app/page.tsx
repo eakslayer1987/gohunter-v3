@@ -75,8 +75,12 @@ export default function LobbyPage() {
         <TopBar />
         <DailyLogin />
 
-        {/* ─── HERO + COIN + AVATAR SHOWCASE — 3 columns on lg+ ─── */}
-        <section className="grid lg:grid-cols-[1fr_300px_1fr] gap-6 lg:gap-6 mb-6 sm:mb-8">
+        {/* ─── HERO + COIN + AVATAR SHOWCASE — 3 columns on lg+.
+            Ratios tuned so hero text gets the most space (it carries
+            the title + bullets + 2 CTAs), coin column stays narrow
+            enough that the rings don't get clipped by lateral neighbours,
+            and avatar showcase keeps room for its 4-up stat chip row. */}
+        <section className="grid lg:grid-cols-[1.1fr_280px_1.05fr] xl:grid-cols-[1.15fr_320px_1fr] gap-4 lg:gap-5 mb-6 sm:mb-8 items-start">
           {/* LEFT — title + copy + CTAs (coin moved to dedicated middle col) */}
           <div className="relative">
             <div className="dl mb-3.5">// PROTOCOL_INIT_001 — WELCOME, AGENT</div>

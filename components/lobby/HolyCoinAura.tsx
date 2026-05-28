@@ -1,16 +1,38 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 /** Holy Coin centerpiece — gently-tilted concentric orbital rings
  *  scattered with many small glow dots. Pure CSS — each dot is
  *  placed via translate+rotate+translate trick so they distribute
- *  evenly around the rim regardless of ring radius. */
+ *  evenly around the rim regardless of ring radius.
+ *
+ *  Responsive sizing: shrinks on lg (~1024-1279px) where the coin
+ *  column is only 280px wide, expands on xl+ where it gets 320px.
+ *  Outer ring radius scales accordingly so the orbits never bleed
+ *  past their column. */
 export default function HolyCoinAura() {
+  // Track xl breakpoint so we can resize radii proportionally.
+  const [isXl, setIsXl] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1280px)');
+    const update = () => setIsXl(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  const wrapperSize = isXl ? 360 : 280;
+  const outerRadius = isXl ? 175 : 138;
+  const innerRadius = isXl ? 142 : 110;
+  const coinSize = isXl ? 220 : 180;
+
   return (
     <div
-      className="relative animate-hover-float"
+      className="relative animate-hover-float mx-auto"
       style={{
-        width: '380px',
-        height: '380px',
+        width: wrapperSize,
+        height: wrapperSize,
         perspective: '1200px',
       }}
     >
@@ -27,7 +49,7 @@ export default function HolyCoinAura() {
 
       {/* OUTER RING — bigger, slow CCW, lots of dots + ticks */}
       <Orbit
-        radius={190}
+        radius={outerRadius}
         spin="ccw"
         speed={26}
         tilt={22}
@@ -38,7 +60,7 @@ export default function HolyCoinAura() {
 
       {/* INNER RING — tighter, CW faster, fewer but punchier dots */}
       <Orbit
-        radius={155}
+        radius={innerRadius}
         spin="cw"
         speed={18}
         tilt={22}
@@ -58,8 +80,8 @@ export default function HolyCoinAura() {
           src="/assets/img/holy-coin.png"
           alt=""
           style={{
-            width: '240px',
-            height: '240px',
+            width: coinSize,
+            height: coinSize,
             objectFit: 'contain',
             transform: 'rotate(-8deg)',
             transformOrigin: 'center center',
