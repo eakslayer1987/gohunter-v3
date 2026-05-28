@@ -1,0 +1,311 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===========================================================
+   COIN HUNTER · BANGKOK GRID — Design System Tokens
+   Ported verbatim from Coin Hunter Bangkok _ Design System/
+   colors_and_type.css. Do NOT use raw hex in components.
+   =========================================================== */
+
+:root {
+  /* BASE / SURFACE */
+  --base:        #0a0612;
+  --base-deep:   #05030a;
+  --base-panel:  rgba(10,6,18,0.85);
+
+  /* CYBER PALETTE — engine pair = cyan + violet */
+  --cy-cyan:     #22D3EE;
+  --cy-violet:   #A78BFA;
+  --cy-gold:     #FBBF24;
+  --cy-red:      #FD1803;
+  --cy-green:    #4ade80;
+  --cy-orange:   #FD7A2F;
+
+  /* TRIBES */
+  --tribe-wolf:   #FD1803;
+  --tribe-lion:   #FD7A2F;
+  --tribe-falcon: #4ade80;
+  --tribe-shark:  #00D9FF;
+
+  /* FOREGROUND */
+  --fg1: #e5e7ff;
+  --fg2: rgba(229,231,255,0.70);
+  --fg3: rgba(229,231,255,0.45);
+  --fg-mono: rgba(34,211,238,0.65);
+
+  /* BORDERS */
+  --br-hairline:    rgba(255,255,255,0.08);
+  --br-soft:        rgba(255,255,255,0.14);
+  --br-cyan:        rgba(34,211,238,0.45);
+  --br-violet:      rgba(167,139,250,0.45);
+  --br-gold:        rgba(251,191,36,0.45);
+  --br-red:         rgba(253,24,3,0.45);
+
+  /* GRADIENTS */
+  --grad-cta:     linear-gradient(135deg, #22D3EE 0%, #A78BFA 100%);
+  --grad-fire:    linear-gradient(135deg, #FD1803, #FD7A2F);
+  --grad-bar:     linear-gradient(90deg, #22D3EE, #A78BFA);
+  --grad-shimmer: linear-gradient(90deg, #22D3EE, #A78BFA, #FBBF24, #22D3EE);
+
+  /* GLOWS */
+  --glow-cta:    0 0 28px rgba(34,211,238,0.50), 0 0 56px rgba(167,139,250,0.30);
+  --glow-cta-hi: 0 0 40px rgba(34,211,238,0.70), 0 0 80px rgba(167,139,250,0.40);
+  --glow-red:    0 0 28px rgba(253,24,3,0.50);
+  --glow-gold:   0 0 20px rgba(251,191,36,0.40);
+  --glow-toast:  0 0 24px rgba(0,0,0,0.60), 0 0 12px currentColor;
+  --inner-panel: inset 0 0 40px rgba(167,139,250,0.08);
+
+  /* CLIP-PATH SHAPES */
+  --clip-pill:        polygon(7px 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 7px 100%, 0 50%);
+  --clip-pill-lg:     polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
+  --clip-btn:         polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+  --clip-btn-sm:      polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  --clip-stat:        polygon(8% 0, 100% 0, 92% 100%, 0 100%);
+  --clip-card-corner: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  --clip-card-corner-lg: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+  --clip-bevel:       polygon(14px 0, calc(100% - 14px) 0, 100% 14px, 100% calc(100% - 14px), calc(100% - 14px) 100%, 14px 100%, 0 calc(100% - 14px), 0 14px);
+}
+
+html, body {
+  background: var(--base-deep);
+  color: var(--fg1);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(167,139,250,0.18), transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(34,211,238,0.14), transparent 50%),
+    var(--base);
+  min-height: 100vh;
+}
+
+@layer components {
+  /* ============ HUD CARD — corner brackets, neon border ============ */
+  .hud {
+    @apply relative bg-base-panel border border-cyber-cyan/30 backdrop-blur-md;
+  }
+  .hud.v { @apply border-cyber-violet/40; }
+  .hud.g { @apply border-cyber-gold/40; }
+  .hud.r { @apply border-cyber-red/40; }
+  .hud::before, .hud::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--cy-cyan);
+  }
+  .hud::before { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+  .hud::after { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+  .hud.v::before, .hud.v::after { border-color: var(--cy-violet); }
+  .hud.g::before, .hud.g::after { border-color: var(--cy-gold); }
+  .hud.r::before, .hud.r::after { border-color: var(--cy-red); }
+
+  /* ============ PILLS — hex bezel both ends + accent glow ============ */
+  .pill {
+    @apply inline-flex items-center gap-1.5 px-3.5 py-1 text-[10px] font-bold uppercase font-display;
+    letter-spacing: 0.12em;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.18);
+    clip-path: var(--clip-pill);
+    white-space: nowrap;
+    color: #fff;
+  }
+  .pill-c {
+    background: rgba(34,211,238,0.10);
+    border-color: rgba(34,211,238,0.6);
+    color: var(--cy-cyan);
+    box-shadow: 0 0 12px rgba(34,211,238,0.25), inset 0 0 8px rgba(34,211,238,0.15);
+  }
+  .pill-v {
+    background: rgba(167,139,250,0.10);
+    border-color: rgba(167,139,250,0.6);
+    color: var(--cy-violet);
+    box-shadow: 0 0 12px rgba(167,139,250,0.25), inset 0 0 8px rgba(167,139,250,0.15);
+  }
+  .pill-g {
+    background: rgba(251,191,36,0.10);
+    border-color: rgba(251,191,36,0.6);
+    color: var(--cy-gold);
+    box-shadow: 0 0 12px rgba(251,191,36,0.25), inset 0 0 8px rgba(251,191,36,0.15);
+  }
+  .pill-r {
+    background: rgba(253,24,3,0.10);
+    border-color: rgba(253,24,3,0.6);
+    color: #FD7A6F;
+    box-shadow: 0 0 12px rgba(253,24,3,0.25), inset 0 0 8px rgba(253,24,3,0.15);
+  }
+  .pill-gr {
+    background: rgba(74,222,128,0.10);
+    border-color: rgba(74,222,128,0.6);
+    color: var(--cy-green);
+    box-shadow: 0 0 12px rgba(74,222,128,0.25), inset 0 0 8px rgba(74,222,128,0.15);
+  }
+
+  /* ============ BUTTONS ============ */
+  .btn-cyber {
+    @apply text-base font-extrabold px-7 py-3 text-[13px] uppercase cursor-pointer border-none font-display transition-all;
+    color: var(--base);
+    background: var(--grad-cta);
+    letter-spacing: 0.16em;
+    clip-path: var(--clip-btn);
+    box-shadow: var(--glow-cta);
+  }
+  .btn-cyber:hover { transform: translateY(-2px); box-shadow: var(--glow-cta-hi); }
+  .btn-cyber:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-ghost {
+    @apply px-5 py-2.5 text-[11px] uppercase cursor-pointer font-bold font-display transition-all;
+    color: var(--cy-cyan);
+    background: rgba(34,211,238,0.08);
+    border: 1px solid rgba(34,211,238,0.45);
+    letter-spacing: 0.16em;
+    clip-path: var(--clip-btn-sm);
+  }
+  .btn-ghost:hover { background: rgba(34,211,238,0.18); }
+  .btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-red {
+    @apply text-white font-extrabold px-7 py-3 text-[13px] uppercase cursor-pointer border-none font-display;
+    background: var(--grad-fire);
+    letter-spacing: 0.16em;
+    clip-path: var(--clip-btn);
+    box-shadow: var(--glow-red);
+  }
+
+  /* ============ TRIBE / MODE / CONTRACT CARDS ============ */
+  .tribe-card {
+    @apply relative p-4 cursor-pointer transition-all;
+    background: rgba(10,6,18,0.7);
+    border: 1px solid rgba(255,255,255,0.08);
+    clip-path: var(--clip-card-corner-lg);
+  }
+  .tribe-card:hover { transform: translateY(-4px); border-color: currentColor; }
+  .tribe-card.selected {
+    border-width: 2px;
+    background: rgba(255,255,255,0.05);
+    box-shadow: 0 0 24px currentColor;
+  }
+
+  .contract {
+    @apply relative p-3.5 cursor-pointer transition-all;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    clip-path: var(--clip-card-corner);
+  }
+  .contract:hover {
+    background: rgba(34,211,238,0.07);
+    border-color: rgba(34,211,238,0.5);
+    transform: translateY(-2px);
+  }
+
+  /* ============ PROGRESS BAR ============ */
+  .bar { @apply h-1 bg-white/10 relative overflow-hidden; }
+  .bar-fill {
+    @apply h-full relative;
+    background: var(--grad-bar);
+  }
+  .bar-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+    animation: shimmer-bg 2s linear infinite;
+    background-size: 200% 100%;
+  }
+
+  /* ============ DATA LINE ============ */
+  .dl {
+    @apply font-mono text-[10px];
+    color: var(--fg-mono);
+    letter-spacing: 0.05em;
+  }
+
+  /* ============ SHIMMER TEXT ============ */
+  .shimmer-text {
+    background: var(--grad-shimmer);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer-bg 4s linear infinite;
+  }
+
+  /* ============ SCANLINE OVERLAY ============ */
+  .scanline-overlay {
+    position: absolute;
+    left: 0; right: 0;
+    height: 80px;
+    background: linear-gradient(180deg, transparent, rgba(34,211,238,0.15), transparent);
+    animation: scan-line 5s linear infinite;
+    pointer-events: none;
+    z-index: 4;
+  }
+
+  /* ============ SCREEN BACKDROP — hex grid + scanlines ============ */
+  .cyber-screen {
+    position: relative;
+    overflow: hidden;
+  }
+  .cyber-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent 0, transparent 2px,
+      rgba(255,255,255,0.025) 2px, rgba(255,255,255,0.025) 3px
+    );
+    pointer-events: none;
+    z-index: 5;
+  }
+  .cyber-screen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.55) 100%);
+    pointer-events: none;
+    z-index: 6;
+  }
+
+  .hex-bg {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='52' viewBox='0 0 60 52'%3E%3Cpath d='M30 0L60 17v18L30 52 0 35V17z' fill='none' stroke='%23A78BFA' stroke-width='0.5' opacity='0.25'/%3E%3C/svg%3E");
+  }
+}
+
+/* ============ DRIFTING COIN PARTICLES ============ */
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, #FBBF24, rgba(251,191,36,0.5), transparent);
+  box-shadow: 0 0 10px #FBBF24;
+  animation: drift-up linear infinite;
+  pointer-events: none;
+}
+
+/* ============ MAPLIBRE OVERRIDES ============ */
+.maplibregl-map { background: #05030a !important; font-family: 'Kanit', sans-serif; }
+.maplibregl-ctrl-group {
+  background: rgba(10,6,18,0.9) !important;
+  border: 1px solid rgba(34,211,238,0.45) !important;
+  box-shadow: 0 0 12px rgba(34,211,238,0.25) !important;
+}
+.maplibregl-ctrl-group button { background: transparent !important; border-color: rgba(34,211,238,0.25) !important; }
+.maplibregl-ctrl-group button + button { border-top-color: rgba(34,211,238,0.25) !important; }
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(0.85) sepia(1) saturate(8) hue-rotate(155deg) brightness(1.1);
+}
+.maplibregl-ctrl-group button:hover { background: rgba(34,211,238,0.15) !important; }
+.maplibregl-ctrl-attrib {
+  background: rgba(10,6,18,0.7) !important;
+  color: rgba(229,231,255,0.4) !important;
+  font-size: 9px !important;
+}
+.maplibregl-ctrl-attrib a { color: rgba(34,211,238,0.6) !important; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--base); }
+::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.3); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(167,139,250,0.5); }
