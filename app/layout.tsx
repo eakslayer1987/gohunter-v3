@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import Toaster from '@/components/ui/Toaster';
+import PWAInstaller from '@/components/ui/PWAInstaller';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -26,10 +27,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=Kanit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
           rel="stylesheet"
         />
+        {/* iOS Safari ignores manifest icons — needs its own touch icon. */}
+        <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
       </head>
       <body className="font-sans">
         {children}
         <Toaster />
+        <PWAInstaller />
       </body>
     </html>
   );

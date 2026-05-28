@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22D3EE"></stop>
+      <stop offset="100%" stop-color="#A78BFA"></stop>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" fill="#0a0612"></rect>
+  <polygon points="96,16 168,56 168,136 96,176 24,136 24,56" fill="none" stroke="url(#g)" stroke-width="6"></polygon>
+  <polygon points="96,40 148,68 148,124 96,152 44,124 44,68" fill="rgba(34,211,238,0.15)"></polygon>
+  <text x="96" y="116" text-anchor="middle" fill="#22D3EE" font-size="56" font-weight="800" font-family="Orbitron, sans-serif">CH</text>
+</svg>
