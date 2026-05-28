@@ -1,0 +1,28 @@
+# Render blueprint — auto-applied when this repo is connected as a
+# Render service. Free tier "Web Service" wakes from sleep on first
+# request after idle so the cold-start is slow but adequate for a
+# prototype demo.
+#
+# After Render imports this, set the env var manually in the
+# dashboard (Settings -> Environment):
+#   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = AIzaSy...
+# Then add the deployed origin to the API key's referrer restrictions
+# in Google Cloud Console:
+#   https://gohunter-v3.onrender.com/*
+# Without that, street view stays in fallback (top-down) mode.
+
+services:
+  - type: web
+    name: gohunter-v3
+    runtime: node
+    plan: free
+    region: singapore       # closest to Thailand
+    branch: master
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.1
+      - key: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+        sync: false         # set manually in dashboard, don't commit
