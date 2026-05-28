@@ -224,17 +224,31 @@ export default function LobbyPage() {
                   </div>
                 </div>
               </div>
-              {/* Glowing violet pedestal — sits below the avatar's feet. */}
+              {/* Triple pedestal rings — outer violet glow + inner cyan
+                  hairline. Both pulse on the same 4.2s loop, the cyan ring
+                  offset by 0.4s so the breathing rhythm reads as nested
+                  rather than synchronised. */}
               <div
-                className="absolute left-1/2 -translate-x-1/2 pointer-events-none z-0"
+                className="absolute left-1/2 pointer-events-none z-0 animate-pedestal-pulse"
                 style={{
-                  bottom: '40px',
+                  bottom: '36px',
                   width: '320px',
                   height: '64px',
                   borderRadius: '50%',
                   border: '2px solid rgba(168,60,255,0.65)',
                   boxShadow:
                     '0 0 36px #743aff, 0 0 80px rgba(116,58,255,0.45), inset 0 0 28px rgba(0,246,255,0.4)',
+                }}
+              />
+              <div
+                className="absolute left-1/2 pointer-events-none z-0 animate-pedestal-pulse"
+                style={{
+                  bottom: '24px',
+                  width: '244px',
+                  height: '38px',
+                  borderRadius: '50%',
+                  border: '1px solid rgba(0,246,255,0.45)',
+                  animationDelay: '0.4s',
                 }}
               />
             </div>
@@ -255,14 +269,14 @@ export default function LobbyPage() {
               <StatChip
                 label="RED GEM"
                 value={player.credits.toLocaleString()}
-                accent="#FBBF24"
-                icon="💎"
+                accent="#FD7A6F"
+                icon={<GemIcon />}
               />
               <StatChip
                 label="HOLY COIN"
                 value={player.totalScore.toLocaleString()}
                 accent="#FBBF24"
-                icon="🪙"
+                icon={<CoinIcon />}
               />
             </div>
 
@@ -289,7 +303,7 @@ export default function LobbyPage() {
               <ModeCard
                 label="SOLO"
                 sub="Single Hunter Mission"
-                icon="🎯"
+                icon={<SoloIcon />}
                 accent="#22D3EE"
                 onClick={onDeploy}
                 disabled={!canDeploy}
@@ -297,7 +311,7 @@ export default function LobbyPage() {
               <ModeCard
                 label="PVP"
                 sub="Hunter vs Hunter · coming soon"
-                icon="⚔️"
+                icon={<PvpIcon />}
                 accent="#D82DFF"
                 onClick={() =>
                   toast.info('▸ PVP_PROTOCOL // RESERVED — coming in next bundle')
@@ -307,7 +321,7 @@ export default function LobbyPage() {
               <ModeCard
                 label="TEAM DUELS"
                 sub="Squad Battle · coming soon"
-                icon="👥"
+                icon={<TeamIcon />}
                 accent="#FBBF24"
                 onClick={() =>
                   toast.info('▸ TEAM_DUELS // RESERVED — coming in next bundle')
@@ -352,7 +366,8 @@ interface StatChipProps {
   label: string;
   value: string;
   accent: string;
-  icon?: string;
+  /** Either a glyph string (fallback) or an inline SVG node. */
+  icon?: React.ReactNode;
   /** 0..1 progress bar shown under the value when provided. */
   progress?: number;
 }
@@ -369,7 +384,11 @@ function StatChip({ label, value, accent, icon, progress }: StatChipProps) {
       }}
     >
       <div className="flex items-center gap-1.5 mb-0.5">
-        {icon && <span className="text-[14px]">{icon}</span>}
+        {icon && (
+          <span className="inline-flex items-center justify-center w-[14px] h-[14px] shrink-0">
+            {icon}
+          </span>
+        )}
         <span className="font-mono text-[9px] text-white/55 tracking-cyber">{label}</span>
       </div>
       <div
@@ -390,7 +409,7 @@ function StatChip({ label, value, accent, icon, progress }: StatChipProps) {
 interface ModeCardProps {
   label: string;
   sub: string;
-  icon: string;
+  icon: React.ReactNode;
   accent: string;
   onClick: () => void;
   disabled?: boolean;
@@ -403,41 +422,136 @@ function ModeCard({ label, sub, icon, accent, onClick, disabled, comingSoon }: M
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="text-left transition-all hover:-translate-y-1 disabled:opacity-40 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
+      className="relative text-left transition-all hover:-translate-y-1 disabled:opacity-40 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
       style={{
-        background: `linear-gradient(135deg, ${accent}0d, transparent 60%)`,
-        border: `1px solid ${accent}66`,
-        padding: '18px 20px',
-        minHeight: '120px',
+        background: `linear-gradient(135deg, ${accent}12, transparent 70%)`,
+        border: `1px solid ${accent}80`,
+        padding: '22px 20px',
+        minHeight: '140px',
         clipPath:
-          'polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))',
+          'polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px)',
         cursor: 'pointer',
+        boxShadow: `inset 0 0 22px ${accent}18`,
       }}
     >
-      <div className="flex items-center gap-4">
-        <span
-          className="text-[40px] leading-none shrink-0"
+      <TileCorners accent={accent} />
+      <div className="flex flex-col items-center gap-2.5 text-center">
+        <div
+          className="shrink-0"
           style={{
-            filter: `drop-shadow(0 0 12px ${accent})`,
+            filter: `drop-shadow(0 0 10px ${accent})`,
+            color: accent,
           }}
         >
           {icon}
-        </span>
-        <div className="min-w-0">
-          <div
-            className="font-display text-[15px] sm:text-[17px] font-extrabold tracking-cyber"
-            style={{ color: accent }}
-          >
-            {label}
-          </div>
-          <div className="font-sans text-[11px] text-white/65 mt-0.5">{sub}</div>
-          {comingSoon && (
-            <div className="font-mono text-[9px] text-cyber-gold/80 mt-1 tracking-cyber">
-              ▸ RESERVED
-            </div>
-          )}
         </div>
+        <div
+          className="font-display text-[15px] sm:text-[17px] font-extrabold tracking-cyber"
+          style={{ color: accent }}
+        >
+          {label}
+        </div>
+        <div className="font-sans text-[11px] text-white/65 leading-tight">{sub}</div>
+        {comingSoon && (
+          <div className="font-mono text-[9px] text-cyber-gold/80 tracking-cyber">
+            ▸ RESERVED
+          </div>
+        )}
       </div>
     </button>
+  );
+}
+
+/** 4 small L-bracket corners inset 6px from edge — used by ModeCard.
+ *  The accent prop ties the corners' colour + drop-shadow to the tile. */
+function TileCorners({ accent }: { accent: string }) {
+  const base: React.CSSProperties = {
+    position: 'absolute',
+    width: 8,
+    height: 8,
+    borderColor: accent,
+    pointerEvents: 'none',
+    filter: `drop-shadow(0 0 3px ${accent})`,
+  };
+  const w = '1.5px solid';
+  return (
+    <>
+      <span style={{ ...base, top: 6, left: 6, borderTop: w, borderLeft: w }} />
+      <span style={{ ...base, top: 6, right: 6, borderTop: w, borderRight: w }} />
+      <span style={{ ...base, bottom: 6, left: 6, borderBottom: w, borderLeft: w }} />
+      <span style={{ ...base, bottom: 6, right: 6, borderBottom: w, borderRight: w }} />
+    </>
+  );
+}
+
+/* ─────────── Inline SVG icons (ported from design ui_kits) ─────────── */
+
+/** Red-tinted faceted gem (5-sided crystal). Used in RED_GEM stat chip. */
+function GemIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
+      <defs>
+        <linearGradient id="ch-gem" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#FD7A6F" />
+          <stop offset="100%" stopColor="#a01408" />
+        </linearGradient>
+      </defs>
+      <polygon points="12,2 22,9 18,22 6,22 2,9" fill="url(#ch-gem)" stroke="#FD7A6F" strokeWidth="0.8" />
+      <polygon points="12,2 18,22 22,9" fill="rgba(255,255,255,0.25)" />
+    </svg>
+  );
+}
+
+/** Gold coin with subtle bolt + cross pattern. Used in HOLY_COIN stat chip. */
+function CoinIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
+      <defs>
+        <radialGradient id="ch-coin" cx="50%" cy="40%">
+          <stop offset="0%" stopColor="#FFE08A" />
+          <stop offset="60%" stopColor="#FBBF24" />
+          <stop offset="100%" stopColor="#8a5a00" />
+        </radialGradient>
+      </defs>
+      <circle cx="12" cy="12" r="10" fill="url(#ch-coin)" stroke="#5a3700" strokeWidth="0.6" />
+      <path d="M9 8 L15 16 M15 8 L9 16" stroke="#5a3700" strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
+    </svg>
+  );
+}
+
+/** Shield with horizontal hunter visor slit — SOLO mode tile. */
+function SoloIcon() {
+  return (
+    <svg width="42" height="42" viewBox="0 0 42 42" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+      <path d="M21 4 L34 11 L34 24 C34 31 28 36 21 38 C14 36 8 31 8 24 L8 11 Z" />
+      <rect x="14" y="17" width="14" height="5" rx="1" fill="currentColor" opacity="0.25" />
+      <line x1="14" y1="19.5" x2="28" y2="19.5" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+/** Crossed swords with small flag accents — PVP mode tile. */
+function PvpIcon() {
+  return (
+    <svg width="42" height="42" viewBox="0 0 42 42" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
+      <path d="M6 6 L26 26 M30 30 L36 36" />
+      <path d="M36 6 L16 26 M12 30 L6 36" />
+      <path d="M4 6 L8 6 L8 10" />
+      <path d="M38 6 L34 6 L34 10" />
+    </svg>
+  );
+}
+
+/** Three-figure squad silhouette — TEAM DUELS mode tile. */
+function TeamIcon() {
+  return (
+    <svg width="42" height="42" viewBox="0 0 42 42" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+      <circle cx="21" cy="13" r="5" />
+      <path d="M11 36 C11 28 16 25 21 25 C26 25 31 28 31 36" />
+      <circle cx="9" cy="16" r="4" />
+      <circle cx="33" cy="16" r="4" />
+      <path d="M2 36 C2 30 5 27 9 27" />
+      <path d="M40 36 C40 30 37 27 33 27" />
+    </svg>
   );
 }

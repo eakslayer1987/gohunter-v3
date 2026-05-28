@@ -5,14 +5,46 @@ import { toast } from '@/store/toastStore';
 interface SocialLink {
   id: string;
   label: string;
-  emoji: string;
+  icon: React.ReactNode;
 }
 
 const SOCIALS: SocialLink[] = [
-  { id: 'discord', label: 'Discord', emoji: '🎮' },
-  { id: 'x', label: 'X (Twitter)', emoji: '✕' },
-  { id: 'youtube', label: 'YouTube', emoji: '▶' },
-  { id: 'facebook', label: 'Facebook', emoji: 'f' },
+  {
+    id: 'discord',
+    label: 'Discord',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+        <path d="M20 4a17 17 0 00-4-1l-.3.6c2 .5 3 1.3 4 2.2A14 14 0 003 5.8c1-1 2-1.7 4-2.2L7 3a17 17 0 00-4 1A18 18 0 002 18a13 13 0 005 2l1-2c-1-.3-2-1-3-1l1-1a13 13 0 0012 0l1 1c-1 0-2 .7-3 1l1 2a13 13 0 005-2 18 18 0 00-1-14zM8 15c-1 0-2-1-2-2s1-2 2-2 2 1 2 2-1 2-2 2zm8 0c-1 0-2-1-2-2s1-2 2-2 2 1 2 2-1 2-2 2z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'x',
+    label: 'X (Twitter)',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+        <path d="M18 2h3l-7 8 8 12h-7l-5-7-6 7H1l8-9L1 2h7l4 6 6-6z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'youtube',
+    label: 'YouTube',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+        <path d="M23 7s-.2-1.6-1-2.3c-.8-.9-1.7-.9-2.2-1C16.6 3.5 12 3.5 12 3.5s-4.6 0-7.8.2c-.4 0-1.3.1-2.1 1C1.2 5.4 1 7 1 7s-.2 1.9-.2 3.7v1.7c0 1.9.2 3.7.2 3.7s.2 1.6 1 2.3c.8.9 1.9.9 2.4 1C6.2 19.5 12 19.5 12 19.5s4.6 0 7.8-.2c.5-.1 1.4-.1 2.2-1 .8-.7 1-2.3 1-2.3s.2-1.9.2-3.7v-1.7c0-1.9-.2-3.6-.2-3.6zM9.7 14.6V8.2l6 3.2-6 3.2z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'facebook',
+    label: 'Facebook',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+        <path d="M22 12a10 10 0 10-11.5 9.9v-7H8v-3h2.5V9.5c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12H16l-.5 3h-2.6v7A10 10 0 0022 12z" />
+      </svg>
+    ),
+  },
 ];
 
 const LEGAL = ['SUPPORT', 'TERMS OF SERVICE', 'PRIVACY POLICY'];
@@ -49,12 +81,12 @@ export default function SiteFooter() {
               onClick={() => stub(s.label)}
               aria-label={s.label}
               title={s.label}
-              className="w-8 h-8 flex items-center justify-center text-[14px] border border-white/15 hover:border-cyber-cyan/50 hover:bg-cyber-cyan/10 transition"
+              className="w-8 h-8 flex items-center justify-center text-white/70 hover:text-cyber-cyan border border-white/15 hover:border-cyber-cyan/50 hover:bg-cyber-cyan/10 transition"
               style={{
                 clipPath: 'polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%)',
               }}
             >
-              {s.emoji}
+              {s.icon}
             </button>
           ))}
         </div>

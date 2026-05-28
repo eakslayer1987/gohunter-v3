@@ -81,27 +81,69 @@ export default function TopBar() {
         ))}
       </nav>
 
-      {/* Status pills + sound toggle */}
-      <div className="flex gap-2 items-center shrink-0">
+      {/* Status pills + chrome icon buttons */}
+      <div className="flex gap-1.5 items-center shrink-0">
         <Pill variant="green">
           <span className="w-1.5 h-1.5 bg-cyber-green rounded-full animate-pulse-dot" />
           SYS ONLINE
         </Pill>
         <Pill variant="cyan" className="hidden sm:inline-flex">2,847 HUNTERS</Pill>
         <Pill variant="violet" className="hidden xl:inline-flex">LATENCY 23MS</Pill>
-        <button
-          type="button"
-          onClick={toggleSound}
-          aria-label={soundEnabled ? 'Mute audio' : 'Unmute audio'}
-          title={soundEnabled ? 'Mute audio' : 'Unmute audio'}
-          className="w-8 h-8 flex items-center justify-center text-[14px] border border-white/15 hover:border-cyber-cyan/50 hover:bg-cyber-cyan/10 transition shrink-0"
-          style={{
-            clipPath: 'polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%)',
-          }}
+        <IconBtn
+          title="Notifications"
+          onClick={() => toast.info('▸ NO NEW ALERTS')}
         >
-          {soundEnabled ? '🔊' : '🔇'}
-        </button>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9" />
+            <path d="M10 21a2 2 0 004 0" />
+          </svg>
+        </IconBtn>
+        <IconBtn
+          title={soundEnabled ? 'Mute audio' : 'Unmute audio'}
+          onClick={toggleSound}
+        >
+          <span className="text-[13px] leading-none">{soundEnabled ? '🔊' : '🔇'}</span>
+        </IconBtn>
+        <IconBtn
+          title="Menu"
+          onClick={() => toast.info('▸ MENU // RESERVED — coming in next bundle')}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </IconBtn>
       </div>
     </div>
+  );
+}
+
+/** Slanted parallelogram icon button — cyan-tinted, used for chrome
+ *  actions (notifications, sound, menu) in the TopBar right cluster. */
+function IconBtn({
+  children,
+  onClick,
+  title,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  title: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      aria-label={title}
+      className="w-8 h-8 flex items-center justify-center text-cyber-cyan hover:bg-cyber-cyan/15 transition shrink-0"
+      style={{
+        background: 'rgba(34,211,238,0.05)',
+        border: '1px solid rgba(34,211,238,0.35)',
+        clipPath: 'polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%)',
+      }}
+    >
+      {children}
+    </button>
   );
 }

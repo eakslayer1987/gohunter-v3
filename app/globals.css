@@ -274,6 +274,15 @@ body {
   }
 }
 
+/* ============ PEDESTAL PULSE — used by AvatarShowcase rings ============ */
+@keyframes pedestal-pulse {
+  0%, 100% { transform: translateX(-50%) scale(1);   opacity: 0.85; }
+  50%      { transform: translateX(-50%) scale(1.06); opacity: 1;    }
+}
+.animate-pedestal-pulse {
+  animation: pedestal-pulse 4.2s ease-in-out infinite;
+}
+
 /* ============ DRIFTING COIN PARTICLES ============ */
 .particle {
   position: absolute;
