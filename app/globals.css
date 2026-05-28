@@ -283,6 +283,87 @@ body {
   animation: pedestal-pulse 4.2s ease-in-out infinite;
 }
 
+/* ============ MOBILE TAB BAR ============ */
+/* Hidden ≥ md (768px). 5-slot grid with the center cell raised into a
+   floating CTA. Safe-area-inset honoured so the bar sits above iPhone's
+   home indicator. */
+.mobile-tabbar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: end;
+  background: linear-gradient(180deg, rgba(10,6,18,0.85), rgba(5,3,10,0.96));
+  border-top: 1px solid rgba(34,211,238,0.35);
+  backdrop-filter: blur(10px);
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.16em;
+}
+@media (min-width: 768px) {
+  .mobile-tabbar { display: none; }
+}
+.mobile-tabbar .mtab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 0 4px;
+  background: transparent;
+  border: 0;
+  color: rgba(255,255,255,0.55);
+  font: inherit;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.mobile-tabbar .mtab.active {
+  color: var(--cy-cyan);
+  text-shadow: 0 0 8px var(--cy-cyan);
+}
+.mobile-tabbar .mtab-icon { line-height: 0; }
+.mobile-tabbar .mtab-label { font-size: 9px; }
+
+.mobile-tabbar .mtab-center {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #0a0612;
+  cursor: pointer;
+  padding: 0 0 2px;
+  font: inherit;
+}
+.mobile-tabbar .mtab-center-ring {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  margin-top: -22px;
+  background: linear-gradient(135deg, #00d4f0 0%, #4dd8ff 30%, #a78bfa 75%, #c084fc 100%);
+  border: 1px solid rgba(34,211,238,0.6);
+  box-shadow: 0 0 24px rgba(34,211,238,0.55), 0 0 48px rgba(167,139,250,0.4);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+.mobile-tabbar .mtab-center-label {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--cy-cyan);
+  margin-top: 2px;
+  text-shadow: 0 0 6px var(--cy-cyan);
+}
+
+/* Lift content above the mobile tab bar so floating chrome doesn't
+   hide the page footer / cyan watermark on mobile. */
+@media (max-width: 767px) {
+  main.cyber-screen { padding-bottom: 92px; }
+}
+
 /* ============ DRIFTING COIN PARTICLES ============ */
 .particle {
   position: absolute;

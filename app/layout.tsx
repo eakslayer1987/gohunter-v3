@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import Toaster from '@/components/ui/Toaster';
 import PWAInstaller from '@/components/ui/PWAInstaller';
+import MobileNav from '@/components/ui/MobileNav';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans">
         {children}
         <Toaster />
+        <MobileNav />
         <PWAInstaller />
       </body>
     </html>

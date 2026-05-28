@@ -25,3 +25,8 @@ next-env.d.ts
 .vscode/
 .idea/
 *.zip
+
+# Imported design system reference folders — kept out of the deployed
+# build (Render-ignored) but available locally as a porting reference.
+/Coin Hunter Bangkok _ Design System/
+/Coin Hunter Bangkok _ Design System (1)/
