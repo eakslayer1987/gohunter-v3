@@ -1,53 +1,50 @@
 'use client';
 
-/** Holy Coin centerpiece with 3 tilted orbital rings + drifting glow
- *  dots. Pure CSS — no asset pipeline. Each ring is an absolute-
- *  positioned div clipped to an ellipse via rotateX(72deg), spun
- *  around Z axis at different speeds, with small dot children riding
- *  along the rim. Outer halo + tick marks on the gold mid-ring give
- *  the "hovering sigil" feel from the reference render. */
+/** Holy Coin centerpiece — gently-tilted concentric orbital rings
+ *  scattered with many small glow dots. Pure CSS — each dot is
+ *  placed via translate+rotate+translate trick so they distribute
+ *  evenly around the rim regardless of ring radius. */
 export default function HolyCoinAura() {
   return (
     <div
       className="relative animate-hover-float"
       style={{
-        width: '360px',
-        height: '360px',
-        perspective: '900px',
+        width: '380px',
+        height: '380px',
+        perspective: '1200px',
       }}
     >
-      {/* Outer glow halo — soft radial behind everything */}
+      {/* Outer glow halo */}
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
             'radial-gradient(circle at 50% 50%, rgba(255,194,60,0.35), rgba(255,43,187,0.15) 45%, transparent 70%)',
-          filter: 'blur(8px)',
+          filter: 'blur(10px)',
         }}
       />
 
-      {/* Orbit 1 — outer cyan ring, slow CCW */}
-      <Orbit color="rgba(34,211,238,0.45)" inset={0} spin="ccw" speed={18}>
-        <Dot color="#22D3EE" angleStyle={{ top: 0, left: '50%', transform: 'translateX(-50%)' }} size={6} />
-        <Dot color="#FBBF24" angleStyle={{ top: '50%', right: 0, transform: 'translateY(-50%)' }} size={7} />
-        <Dot color="#22D3EE" angleStyle={{ bottom: 0, left: '50%', transform: 'translateX(-50%)' }} size={5} />
-        <Dot color="#A78BFA" angleStyle={{ top: '50%', left: 0, transform: 'translateY(-50%)' }} size={6} />
-      </Orbit>
+      {/* OUTER RING — bigger, slow CCW, lots of dots + ticks */}
+      <Orbit
+        radius={190}
+        spin="ccw"
+        speed={26}
+        tilt={22}
+        color="rgba(255,194,60,0.45)"
+        dotPattern={outerDots}
+        withTicks
+      />
 
-      {/* Orbit 2 — middle gold ring with tick marks, CW */}
-      <Orbit color="rgba(251,191,36,0.55)" inset={30} spin="cw" speed={14} withTicks>
-        <Dot color="#FBBF24" angleStyle={{ top: 0, left: '50%', transform: 'translateX(-50%)' }} size={7} />
-        <Dot color="#FF35E6" angleStyle={{ top: '30%', right: '6%' }} size={6} />
-        <Dot color="#FBBF24" angleStyle={{ bottom: '20%', left: '8%' }} size={5} />
-      </Orbit>
-
-      {/* Orbit 3 — inner magenta ring, fast CCW */}
-      <Orbit color="rgba(255,43,187,0.5)" inset={60} spin="ccw" speed={10}>
-        <Dot color="#FF35E6" angleStyle={{ top: 0, left: '50%', transform: 'translateX(-50%)' }} size={6} />
-        <Dot color="#22D3EE" angleStyle={{ bottom: '20%', right: '20%' }} size={5} />
-        <Dot color="#FBBF24" angleStyle={{ bottom: '30%', left: '15%' }} size={5} />
-      </Orbit>
+      {/* INNER RING — tighter, CW faster, fewer but punchier dots */}
+      <Orbit
+        radius={155}
+        spin="cw"
+        speed={18}
+        tilt={22}
+        color="rgba(255,43,187,0.45)"
+        dotPattern={innerDots}
+      />
 
       {/* Center coin */}
       <div
@@ -61,16 +58,14 @@ export default function HolyCoinAura() {
           src="/assets/img/holy-coin.png"
           alt=""
           style={{
-            width: '230px',
-            height: '230px',
+            width: '240px',
+            height: '240px',
             objectFit: 'contain',
             transform: 'rotate(-8deg)',
             transformOrigin: 'center center',
           }}
           onError={(e) => {
-            // Fallback to CSS coin if image missing
-            const target = e.currentTarget;
-            target.style.display = 'none';
+            e.currentTarget.style.display = 'none';
           }}
         />
       </div>
@@ -78,90 +73,133 @@ export default function HolyCoinAura() {
   );
 }
 
-interface OrbitProps {
+interface DotSpec {
+  /** Angle in degrees, 0 = top, going clockwise. */
+  angle: number;
+  /** px diameter. */
+  size: number;
+  /** CSS colour string (also used for glow). */
   color: string;
-  /** Insets from the wrapper's 360px box. */
-  inset: number;
+}
+
+/** 18 dots around the outer rim — gold-heavy with a few cyan/violet
+ *  accents at irregular spacing so it doesn't look mechanical. */
+const outerDots: DotSpec[] = [
+  { angle: 0,   size: 4, color: '#FBBF24' },
+  { angle: 18,  size: 3, color: '#FBBF24' },
+  { angle: 38,  size: 5, color: '#22D3EE' },
+  { angle: 60,  size: 3, color: '#FBBF24' },
+  { angle: 82,  size: 4, color: '#FBBF24' },
+  { angle: 105, size: 3, color: '#FF35E6' },
+  { angle: 128, size: 4, color: '#FBBF24' },
+  { angle: 150, size: 5, color: '#22D3EE' },
+  { angle: 172, size: 3, color: '#FBBF24' },
+  { angle: 195, size: 4, color: '#FBBF24' },
+  { angle: 218, size: 3, color: '#FF35E6' },
+  { angle: 240, size: 5, color: '#FBBF24' },
+  { angle: 262, size: 4, color: '#22D3EE' },
+  { angle: 282, size: 3, color: '#FBBF24' },
+  { angle: 302, size: 5, color: '#FBBF24' },
+  { angle: 322, size: 3, color: '#FF35E6' },
+  { angle: 340, size: 4, color: '#FBBF24' },
+  { angle: 355, size: 3, color: '#22D3EE' },
+];
+
+/** 10 dots on the inner ring — more magenta-leaning since it's the
+ *  faster ring closer to the coin. */
+const innerDots: DotSpec[] = [
+  { angle: 12,  size: 4, color: '#FF35E6' },
+  { angle: 48,  size: 3, color: '#FBBF24' },
+  { angle: 80,  size: 5, color: '#FF35E6' },
+  { angle: 115, size: 3, color: '#22D3EE' },
+  { angle: 148, size: 4, color: '#FF35E6' },
+  { angle: 188, size: 3, color: '#FBBF24' },
+  { angle: 220, size: 5, color: '#FF35E6' },
+  { angle: 252, size: 3, color: '#22D3EE' },
+  { angle: 290, size: 4, color: '#FF35E6' },
+  { angle: 328, size: 3, color: '#FBBF24' },
+];
+
+interface OrbitProps {
+  /** Distance from wrapper center to ring rim (px). */
+  radius: number;
   spin: 'cw' | 'ccw';
   /** Animation duration in seconds. */
   speed: number;
-  /** Add 8 tick marks evenly around the rim (decoration for the gold ring). */
+  /** Perspective tilt (rotateX) in degrees. 0 = flat circle, 90 = edge-on. */
+  tilt: number;
+  /** Ring border colour (will be reused for inset glow). */
+  color: string;
+  /** Dots placed on the rim — see DotSpec. */
+  dotPattern: DotSpec[];
+  /** Add tick marks every 30° (decoration for the outer ring). */
   withTicks?: boolean;
-  children?: React.ReactNode;
 }
 
-function Orbit({ color, inset, spin, speed, withTicks, children }: OrbitProps) {
-  const animName = spin === 'cw' ? 'orbit-spin-cw' : 'orbit-spin-ccw';
+function Orbit({ radius, spin, speed, tilt, color, dotPattern, withTicks }: OrbitProps) {
+  const size = radius * 2;
+  const dir = spin === 'cw' ? 360 : -360;
   return (
     <div
       aria-hidden
       className="absolute pointer-events-none"
       style={{
-        inset,
+        top: '50%',
+        left: '50%',
+        width: size,
+        height: size,
+        marginLeft: -radius,
+        marginTop: -radius,
         borderRadius: '50%',
         border: `1px solid ${color}`,
-        // rotateX flattens the circle into an ellipse (perspective ring);
-        // the Z spin happens via keyframes that include the same rotateX.
-        transform: 'rotateX(70deg)',
+        boxShadow: `0 0 14px ${color}, inset 0 0 12px ${color}`,
+        transform: `rotateX(${tilt}deg)`,
         transformStyle: 'preserve-3d',
-        animation: `${animName} ${speed}s linear infinite`,
-        boxShadow: `0 0 14px ${color}, inset 0 0 18px ${color.replace(/0?\.\d+/, '0.18')}`,
+        animation: `orbit-${spin}-${speed} ${speed}s linear infinite`,
       }}
     >
-      {withTicks && (
-        <>
-          {Array.from({ length: 12 }).map((_, i) => (
-            <span
-              key={i}
-              style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                width: '2px',
-                height: '8px',
-                background: color,
-                transform: `translate(-50%, -50%) rotate(${i * 30}deg) translateY(-${50}%)`,
-                transformOrigin: 'center',
-              }}
-            />
-          ))}
-        </>
-      )}
-      {children}
+      {/* Tick marks every 30° — short radial dashes */}
+      {withTicks &&
+        Array.from({ length: 12 }).map((_, i) => (
+          <span
+            key={`tick-${i}`}
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              width: '2px',
+              height: '10px',
+              background: color,
+              transform: `translate(-50%, -50%) rotate(${i * 30}deg) translateY(-${radius - 2}px)`,
+              transformOrigin: 'center',
+              opacity: 0.7,
+            }}
+          />
+        ))}
+      {/* Dots — placed on rim via rotate+translate trick */}
+      {dotPattern.map((d, i) => (
+        <span
+          key={`dot-${i}`}
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: d.size,
+            height: d.size,
+            borderRadius: '50%',
+            background: d.color,
+            boxShadow: `0 0 6px ${d.color}, 0 0 10px ${d.color}`,
+            transform: `translate(-50%, -50%) rotate(${d.angle}deg) translateY(-${radius}px)`,
+            transformOrigin: 'center',
+          }}
+        />
+      ))}
       <style jsx>{`
-        @keyframes orbit-spin-cw {
-          from { transform: rotateX(70deg) rotateZ(0deg); }
-          to   { transform: rotateX(70deg) rotateZ(360deg); }
-        }
-        @keyframes orbit-spin-ccw {
-          from { transform: rotateX(70deg) rotateZ(0deg); }
-          to   { transform: rotateX(70deg) rotateZ(-360deg); }
+        @keyframes orbit-${spin}-${speed} {
+          from { transform: rotateX(${tilt}deg) rotateZ(0deg); }
+          to   { transform: rotateX(${tilt}deg) rotateZ(${dir}deg); }
         }
       `}</style>
     </div>
-  );
-}
-
-interface DotProps {
-  color: string;
-  /** Where on the orbit rim — top/right/bottom/left or pct. */
-  angleStyle: React.CSSProperties;
-  size: number;
-}
-
-function Dot({ color, angleStyle, size }: DotProps) {
-  return (
-    <span
-      aria-hidden
-      style={{
-        position: 'absolute',
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        background: color,
-        boxShadow: `0 0 8px ${color}, 0 0 14px ${color}`,
-        ...angleStyle,
-      }}
-    />
   );
 }
