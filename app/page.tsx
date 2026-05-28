@@ -81,15 +81,11 @@ export default function LobbyPage() {
           <div className="relative">
             <div className="dl mb-3.5">// PROTOCOL_INIT_001 — WELCOME, AGENT</div>
 
-            <h1 className="font-display text-4xl sm:text-5xl lg:text-[64px] xl:text-[72px] font-extrabold leading-[.95] mb-4 sm:mb-5 tracking-cyber relative z-10">
+            <h1 className="font-display text-3xl sm:text-4xl lg:text-[52px] xl:text-[60px] font-extrabold leading-[.95] mb-4 sm:mb-5 tracking-cyber relative z-10">
+              {/* GO HUNTER — single line (whitespace-nowrap so it never
+                  breaks between GO and HUNTER even on tighter columns) */}
               <span
-                className="block animate-glitch-flicker"
-                style={{ color: '#ffffff', textShadow: '0 0 12px rgba(255,255,255,0.4)' }}
-              >
-                THE
-              </span>
-              <span
-                className="block"
+                className="block whitespace-nowrap"
                 style={{
                   background: 'linear-gradient(90deg, #71ff28, #00f6ff, #168cff)',
                   WebkitBackgroundClip: 'text',
@@ -100,8 +96,9 @@ export default function LobbyPage() {
               >
                 GO HUNTER
               </span>
+              {/* HOLY COIN — also single line for consistent rhythm */}
               <span
-                className="block"
+                className="block whitespace-nowrap"
                 style={{
                   background: 'linear-gradient(90deg, #8e30ff, #ff35e6)',
                   WebkitBackgroundClip: 'text',
