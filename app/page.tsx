@@ -7,6 +7,7 @@ import CyberBackdrop from '@/components/ui/CyberBackdrop';
 import Particles from '@/components/ui/Particles';
 import Bar from '@/components/ui/Bar';
 import BevelFrame from '@/components/ui/BevelFrame';
+import HolyCoinAura from '@/components/lobby/HolyCoinAura';
 import TopBar from '@/components/lobby/TopBar';
 import CompanionPanel from '@/components/lobby/CompanionPanel';
 import TribeSelector from '@/components/lobby/TribeSelector';
@@ -164,64 +165,11 @@ export default function LobbyPage() {
 
           </div>
 
-          {/* CENTER — Holy Coin column (lg+ only). Hidden on mobile/tablet
+          {/* CENTER — Holy Coin with orbital aura. Hidden on mobile/tablet
               where the layout collapses to a single column and a giant
               decorative coin would just push real content off-screen. */}
           <div className="hidden lg:flex items-center justify-center relative">
-            <div
-              className="pointer-events-none animate-hover-float"
-              style={{
-                width: '280px',
-                height: '280px',
-                filter:
-                  'drop-shadow(0 0 40px rgba(255,194,60,0.6)) drop-shadow(0 0 70px rgba(255,43,187,0.35))',
-              }}
-            >
-              <img
-                src="/assets/img/holy-coin.png"
-                alt=""
-                className="w-full h-full object-contain"
-                style={{
-                  // Source PNG ships with a baked-in ~8° clockwise tilt
-                  // ("designed angled" look). Counter-rotate so the
-                  // GO HUNTER text arc reads upright in the layout.
-                  transform: 'rotate(-8deg)',
-                  transformOrigin: 'center center',
-                }}
-                onError={(e) => {
-                  // Fallback: hide broken img, show CSS coin
-                  e.currentTarget.style.display = 'none';
-                  const sib = e.currentTarget.nextElementSibling as HTMLElement | null;
-                  if (sib) sib.style.display = 'grid';
-                }}
-              />
-              <div
-                style={{
-                  display: 'none',
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: '50%',
-                  background:
-                    'radial-gradient(circle at 48% 45%, #070707 0 31%, #261400 32%, #f7aa28 37%, #2a1702 42%, #b76b12 48%, #050505 62%, #ffb933 66%, #3e2204 70%)',
-                  placeItems: 'center',
-                  transform: 'rotate(-8deg)',
-                  border: '2px dotted rgba(255,214,80,0.45)',
-                  fontSize: '120px',
-                }}
-              >
-                <span
-                  style={{
-                    background: 'linear-gradient(180deg, #ff28db, #10d7ff)',
-                    WebkitBackgroundClip: 'text',
-                    backgroundClip: 'text',
-                    color: 'transparent',
-                    textShadow: '0 0 24px #b900ff',
-                  }}
-                >
-                  ⚡
-                </span>
-              </div>
-            </div>
+            <HolyCoinAura />
           </div>
 
           {/* RIGHT — AVATAR SHOWCASE panel wrapped in BevelFrame
