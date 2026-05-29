@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button';
 import Bar from '@/components/ui/Bar';
 import CyberBackdrop from '@/components/ui/CyberBackdrop';
 import { useGameStore } from '@/store/gameStore';
+import { toast } from '@/store/toastStore';
 import { getTribe } from '@/data/tribes';
 import { getPetStageMeta, nextStageMeta } from '@/data/pets';
 import JellyCat from '@/components/lobby/JellyCat';
@@ -32,9 +33,12 @@ export default function ProfilePage() {
   const pet = useGameStore((s) => s.pet);
   const runHistory = useGameStore((s) => s.runHistory);
   const achievements = useGameStore((s) => s.achievements);
+  const leaderboard = useGameStore((s) => s.leaderboard);
   const ensureAgentId = useGameStore((s) => s.ensureAgentId);
   const refreshLeaderboard = useGameStore((s) => s.refreshLeaderboard);
   const regenStamina = useGameStore((s) => s.regenStamina);
+  const addStamina = useGameStore((s) => s.addStamina);
+  const addCredits = useGameStore((s) => s.addCredits);
 
   // Profile lives outside the lobby flow — keep the housekeeping that
   // normally happens on lobby mount so stats reflect current reality.
@@ -45,6 +49,20 @@ export default function ProfilePage() {
   }, [ensureAgentId, refreshLeaderboard, regenStamina]);
 
   const tribe = getTribe(player.tribe);
+
+  /** Find this player's leaderboard rank. refreshLeaderboard sorts by
+   *  weeklyScore and tags the "me" entry. If absent for any reason
+   *  (e.g. first-ever mount), fall back to placeholder "--". */
+  const myRank = (() => {
+    const idx = leaderboard.findIndex((e) => e.id === 'me');
+    return idx >= 0 ? idx + 1 : null;
+  })();
+
+  const onDevRefill = () => {
+    addStamina(player.maxStamina);
+    addCredits(2000);
+    toast.success(`▸ DEV_REFILL // +${player.maxStamina}⚡ +2000CR`);
+  };
 
   const stats = useMemo(() => {
     const totalRuns = runHistory.length;
@@ -135,6 +153,7 @@ export default function ProfilePage() {
                 <div className="flex gap-1.5 mt-2.5 flex-wrap">
                   <Pill variant="cyan">LV {player.level}</Pill>
                   <Pill variant="gold">★ ELITE</Pill>
+                  <Pill variant="violet">RANK #{myRank ?? '—'}</Pill>
                   <Pill variant="red">🔥 {player.loginStreak} DAYS</Pill>
                 </div>
               </div>
@@ -152,7 +171,7 @@ export default function ProfilePage() {
               <Bar value={player.xp} max={player.xpToNext} />
             </div>
 
-            <div className="mb-1">
+            <div className="mb-3">
               <div className="flex justify-between mb-1">
                 <span className="font-mono text-[10px] text-white/55">
                   STAMINA // {player.stamina} / {player.maxStamina}
@@ -161,6 +180,21 @@ export default function ProfilePage() {
               </div>
               <Bar value={player.stamina} max={player.maxStamina} height={5} />
             </div>
+
+            {/* DEV_REFILL — dashed-violet footer, +maxStamina ⚡ + 2000CR.
+                Mirrors the design-system mockup's debug refill footer.
+                Useful for testing flows that need lots of CR / energy. */}
+            <button
+              type="button"
+              onClick={onDevRefill}
+              className="w-full px-3 py-2 font-mono text-[9px] text-cyber-violet/80 tracking-widest2 cursor-pointer hover:bg-cyber-violet/10 transition"
+              style={{
+                background: 'rgba(0,0,0,0.4)',
+                border: '1px dashed rgba(167,139,250,0.35)',
+              }}
+            >
+              ▸ DEV_REFILL // +{player.maxStamina}⚡ +2000CR
+            </button>
           </HudCard>
 
           {/* COMBAT STATS */}

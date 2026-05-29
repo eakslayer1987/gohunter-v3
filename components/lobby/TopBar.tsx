@@ -1,16 +1,17 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Pill from '@/components/ui/Pill';
 import { useSoundStore } from '@/store/soundStore';
+import { useAuthStore } from '@/store/authStore';
 import { toast } from '@/store/toastStore';
 import clsx from 'clsx';
 
 interface NavTab {
   id: string;
   label: string;
-  /** Route the tab navigates to. The DASHBOARD tab maps to `/`. */
   href: string;
 }
 
@@ -23,16 +24,56 @@ const NAV_TABS: NavTab[] = [
   { id: 'shop',        label: 'SHOP',        href: '/shop' },
 ];
 
+/** Secondary nav items surfaced via the hamburger dropdown. MARKET
+ *  lives here (off the main tab bar) plus runs/profile shortcuts that
+ *  don't deserve their own slot. SIGN_OUT / JOIN_GRID render
+ *  conditionally based on auth state. */
+const MENU_ITEMS: NavTab[] = [
+  { id: 'market',  label: 'MARKET',     href: '/market' },
+  { id: 'runs',    label: 'MY_RUNS',    href: '/runs' },
+  { id: 'profile', label: 'PROFILE',    href: '/profile' },
+  { id: 'settings', label: 'SETTINGS',  href: '/settings' },
+];
+
 export default function TopBar() {
   const pathname = usePathname();
+  const router = useRouter();
   const soundEnabled = useSoundStore((s) => s.enabled);
   const toggleSound = useSoundStore((s) => s.toggle);
+  const guest = useAuthStore((s) => s.guest);
+  const signOut = useAuthStore((s) => s.signOut);
 
-  /** Active = exact match for `/`, prefix match for everything else.
-   *  Without the special-case, every page would match `/` and light up
-   *  DASHBOARD alongside the actual current tab. */
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  /** Close menu on outside click + Escape. Without this the dropdown
+   *  stays open after the user navigates and re-orients on the new
+   *  page — disorienting. */
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen]);
+
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href);
+
+  const onSignOut = () => {
+    signOut();
+    setMenuOpen(false);
+    toast.info('▸ SESSION_ENDED');
+    router.push('/login');
+  };
 
   return (
     <div className="flex justify-between items-center mb-6 gap-3 flex-wrap">
@@ -51,8 +92,7 @@ export default function TopBar() {
         </div>
       </Link>
 
-      {/* Nav tabs — hidden below md, scroll-x on md, full row on lg.
-          Underline + glow on active tab. */}
+      {/* Nav tabs */}
       <nav
         className="hidden md:flex items-center gap-1 lg:gap-2 flex-1 justify-center overflow-x-auto px-2"
         aria-label="Primary navigation"
@@ -77,14 +117,39 @@ export default function TopBar() {
         })}
       </nav>
 
-      {/* Status pills + chrome icon buttons */}
+      {/* Right cluster — status pills + chrome icon buttons. Guest mode
+          swaps the long pill row for a single JOIN_GRID CTA so unauth'd
+          visitors get a clear one-click path into the funnel. */}
       <div className="flex gap-1.5 items-center shrink-0">
-        <Pill variant="green">
-          <span className="w-1.5 h-1.5 bg-cyber-green rounded-full animate-pulse-dot" />
-          SYS ONLINE
-        </Pill>
-        <Pill variant="cyan" className="hidden sm:inline-flex">2,847 HUNTERS</Pill>
-        <Pill variant="violet" className="hidden xl:inline-flex">LATENCY 23MS</Pill>
+        {guest ? (
+          <Link
+            href="/login"
+            className="font-display font-extrabold text-[10px] tracking-widest2 px-3.5 py-1.5 no-underline transition"
+            style={{
+              background: 'linear-gradient(135deg, #22D3EE, #A78BFA)',
+              color: '#0a0612',
+              clipPath:
+                'polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%)',
+              boxShadow: '0 0 18px rgba(34,211,238,0.5)',
+            }}
+          >
+            ▸ JOIN_GRID
+          </Link>
+        ) : (
+          <>
+            <Pill variant="green">
+              <span className="w-1.5 h-1.5 bg-cyber-green rounded-full animate-pulse-dot" />
+              SYS ONLINE
+            </Pill>
+            <Pill variant="cyan" className="hidden sm:inline-flex">
+              2,847 HUNTERS
+            </Pill>
+            <Pill variant="violet" className="hidden xl:inline-flex">
+              LATENCY 23MS
+            </Pill>
+          </>
+        )}
+
         <IconBtn
           title="Notifications"
           onClick={() => toast.info('▸ NO NEW ALERTS')}
@@ -100,36 +165,101 @@ export default function TopBar() {
         >
           <span className="text-[13px] leading-none">{soundEnabled ? '🔊' : '🔇'}</span>
         </IconBtn>
-        <IconBtn href="/settings" title="Settings">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" />
-          </svg>
-        </IconBtn>
+
+        {/* Hamburger — opens a HUD-styled dropdown with secondary nav
+            (MARKET / MY_RUNS / PROFILE / SETTINGS) + auth action. */}
+        <div className="relative" ref={menuRef}>
+          <IconBtn
+            title="Menu"
+            onClick={() => setMenuOpen((o) => !o)}
+            pressed={menuOpen}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </IconBtn>
+
+          {menuOpen && (
+            <div
+              role="menu"
+              className="absolute right-0 top-full mt-2 w-[200px] z-30"
+              style={{
+                background: 'rgba(10,6,18,0.96)',
+                border: '1px solid rgba(34,211,238,0.55)',
+                boxShadow:
+                  '0 0 24px rgba(34,211,238,0.25), inset 0 0 16px rgba(167,139,250,0.08)',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              <div className="dl px-3.5 pt-2.5 pb-1.5">// QUICK_NAV</div>
+              {MENU_ITEMS.map((item) => (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  onClick={() => setMenuOpen(false)}
+                  className={clsx(
+                    'block px-3.5 py-2 font-display text-[11px] tracking-cyber transition no-underline',
+                    isActive(item.href)
+                      ? 'text-cyber-cyan bg-cyber-cyan/10'
+                      : 'text-white/70 hover:text-cyber-cyan hover:bg-cyber-cyan/5',
+                  )}
+                >
+                  ▸ {item.label}
+                </Link>
+              ))}
+              <div
+                className="h-px mx-3.5 my-1"
+                style={{ background: 'rgba(255,255,255,0.08)' }}
+              />
+              {guest ? (
+                <Link
+                  href="/login"
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-3.5 py-2 font-display text-[11px] tracking-cyber text-cyber-cyan hover:bg-cyber-cyan/10 transition no-underline"
+                >
+                  ▸ LOGIN
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onSignOut}
+                  className="w-full text-left px-3.5 py-2 font-display text-[11px] tracking-cyber text-cyber-red hover:bg-cyber-red/10 transition"
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                >
+                  ▸ SIGN_OUT
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 /** Slanted parallelogram icon button — cyan-tinted, used for chrome
- *  actions (notifications, sound, settings) in the TopBar right cluster.
- *  Renders a Link when href is provided, otherwise a plain button. */
+ *  actions in the TopBar right cluster. Renders Link when href, else
+ *  a button. `pressed` toggles the active-state styling. */
 function IconBtn({
   children,
   onClick,
   title,
   href,
+  pressed,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   title: string;
   href?: string;
+  pressed?: boolean;
 }) {
   const className =
     'w-8 h-8 flex items-center justify-center text-cyber-cyan hover:bg-cyber-cyan/15 transition shrink-0 no-underline';
   const style: React.CSSProperties = {
-    background: 'rgba(34,211,238,0.05)',
-    border: '1px solid rgba(34,211,238,0.35)',
+    background: pressed ? 'rgba(34,211,238,0.18)' : 'rgba(34,211,238,0.05)',
+    border: `1px solid ${pressed ? 'rgba(34,211,238,0.7)' : 'rgba(34,211,238,0.35)'}`,
     clipPath: 'polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%)',
   };
   if (href) {
