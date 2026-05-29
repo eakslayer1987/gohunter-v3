@@ -129,10 +129,10 @@ export default function ResultPage() {
     return opponentFinalScore(timeline);
   }, [opponent, matchId, cur.duration]);
 
-  /** Outcome — VICTORY if the player's running run total ≥ opponent's
-   *  final after all bursts; DEFEAT otherwise. DRAW is a corner case
-   *  (exact tie). Compared against runTotal so cumulative wins matter
-   *  more than a single great pin. */
+  /** Outcome — only meaningful on the final mission. Comparing
+   *  cumulative player score to the opponent's full-match total
+   *  earlier in the run would always read DEFEAT. */
+  const isFinalMission = idx + 1 >= missions.length;
   const outcome: 'victory' | 'defeat' | 'draw' =
     runTotal > opponentTotal
       ? 'victory'
@@ -237,17 +237,34 @@ export default function ResultPage() {
           <Pill variant="cyan">RUN TOTAL // {runTotal.toLocaleString()}</Pill>
         </HudCard>
 
-        {/* ─── VS PANEL — multiplayer outcome comparison ─── */}
-        <VsPanel
-          playerName={player.nickname.toUpperCase().replace(/ /g, '_')}
-          playerTribeEmoji={tribe.emoji}
-          playerScore={runTotal}
-          opponentName={opponent.name}
-          opponentTribeEmoji={opponent.tribeEmoji}
-          opponentSkill={opponent.skill}
-          opponentScore={opponentTotal}
-          outcome={outcome}
-        />
+        {/* ─── VS PANEL — only renders on the FINAL mission of a
+            match. Comparing player's mission-1 score to the
+            opponent's full-match total mid-run guaranteed a
+            DEFEAT badge after every mid-match DEBRIEF, which read
+            like a bug. Mid-match the opponent shows up as an
+            informational "OPP_PROGRESS" strip instead. */}
+        {isFinalMission ? (
+          <VsPanel
+            playerName={player.nickname.toUpperCase().replace(/ /g, '_')}
+            playerTribeEmoji={tribe.emoji}
+            playerScore={runTotal}
+            opponentName={opponent.name}
+            opponentTribeEmoji={opponent.tribeEmoji}
+            opponentSkill={opponent.skill}
+            opponentScore={opponentTotal}
+            outcome={outcome}
+          />
+        ) : (
+          <OpponentProgressStrip
+            playerName={player.nickname.toUpperCase().replace(/ /g, '_')}
+            playerScore={runTotal}
+            opponentName={opponent.name}
+            opponentTribeEmoji={opponent.tribeEmoji}
+            opponentScore={opponentTotal}
+            roundsDone={idx + 1}
+            roundsTotal={missions.length}
+          />
+        )}
 
         {/* MAIN GRID */}
         <div className="grid lg:grid-cols-[1.5fr_1fr] gap-4 mt-3.5">
@@ -405,6 +422,72 @@ export default function ResultPage() {
         />
       </div>
     </main>
+  );
+}
+
+interface ProgressStripProps {
+  playerName: string;
+  playerScore: number;
+  opponentName: string;
+  opponentTribeEmoji: string;
+  opponentScore: number;
+  roundsDone: number;
+  roundsTotal: number;
+}
+
+/** Informational progress strip shown on mid-match DEBRIEFs. No
+ *  outcome judgement (since the match isn't over yet) — just shows
+ *  player vs opponent running scores plus a "X / N ROUNDS" caption
+ *  so the user knows what they're looking at. */
+function OpponentProgressStrip({
+  playerName,
+  playerScore,
+  opponentName,
+  opponentTribeEmoji,
+  opponentScore,
+  roundsDone,
+  roundsTotal,
+}: ProgressStripProps) {
+  // Opponent's pro-rated score at the current round so the comparison
+  // is apples-to-apples — full-match total scaled down to where we are.
+  const opponentPro = Math.round(
+    (opponentScore * roundsDone) / Math.max(roundsTotal, 1),
+  );
+  const leading = playerScore >= opponentPro;
+  const accent = leading ? '#4ade80' : '#FBBF24';
+
+  return (
+    <div
+      className="mt-3 px-4 py-2.5 flex items-center gap-3 flex-wrap"
+      style={{
+        background: 'rgba(5,3,10,0.85)',
+        border: `1px solid ${accent}55`,
+        clipPath:
+          'polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)',
+        boxShadow: `inset 0 0 18px ${accent}10`,
+      }}
+    >
+      <span
+        className="font-mono text-[9px] tracking-widest2"
+        style={{ color: accent }}
+      >
+        ▸ {leading ? 'AHEAD' : 'BEHIND'} ON_ROUND
+      </span>
+      <span className="font-mono text-[9px] text-white/45">
+        {roundsDone} / {roundsTotal}
+      </span>
+      <span className="flex-1" />
+      <div className="flex items-center gap-3 font-mono text-[11px] tabular-nums">
+        <span className="text-cyber-cyan">
+          {playerName} <span className="font-display font-bold">{playerScore.toLocaleString()}</span>
+        </span>
+        <span className="text-white/30">vs</span>
+        <span className="text-cyber-red">
+          {opponentTribeEmoji} {opponentName}{' '}
+          <span className="font-display font-bold">~{opponentPro.toLocaleString()}</span>
+        </span>
+      </div>
+    </div>
   );
 }
 

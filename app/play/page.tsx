@@ -420,7 +420,7 @@ export default function PlayPage() {
               </div>
 
               {/* Divider */}
-              <div className="h-px my-2.5 bg-white/8" />
+              <div className="h-px my-2.5 bg-white/10" />
 
               {/* Companion skill half — tap to use */}
               <button
