@@ -8,6 +8,7 @@ import { ACHIEVEMENT_CATALOG } from '@/data/achievements';
 import { stageForLevel } from '@/data/pets';
 import { distanceMeters, todayKey, randomAgentId } from '@/lib/utils';
 import { useToastStore } from '@/store/toastStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { playUnlock } from '@/lib/sound';
 
 interface GameStore {
@@ -164,6 +165,10 @@ export const useGameStore = create<GameStore>()(
       },
 
       spendStamina: (n) => {
+        // TEST_MODE — bypass the stamina gate entirely so QA can play
+        // contracts back-to-back without waiting on regen or DEV_REFILL.
+        // Settings persists, so toggling off in /settings disables this.
+        if (useSettingsStore.getState().testMode) return true;
         const cur = get().player.stamina;
         if (cur < n) return false;
         set((s) => {

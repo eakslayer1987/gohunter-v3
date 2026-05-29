@@ -7,6 +7,7 @@ import Pill from '@/components/ui/Pill';
 import { useSoundStore } from '@/store/soundStore';
 import { useAuthStore } from '@/store/authStore';
 import { useGameStore } from '@/store/gameStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { toast } from '@/store/toastStore';
 import clsx from 'clsx';
 
@@ -46,6 +47,7 @@ export default function TopBar() {
   const maxStamina = useGameStore((s) => s.player.maxStamina);
   const addStamina = useGameStore((s) => s.addStamina);
   const addCredits = useGameStore((s) => s.addCredits);
+  const testMode = useSettingsStore((s) => s.testMode);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -151,6 +153,12 @@ export default function TopBar() {
           </Link>
         ) : (
           <>
+            {testMode && (
+              <Pill variant="gold">
+                <span className="w-1.5 h-1.5 bg-cyber-gold rounded-full animate-pulse-dot" />
+                ∞ TEST
+              </Pill>
+            )}
             <Pill variant="green">
               <span className="w-1.5 h-1.5 bg-cyber-green rounded-full animate-pulse-dot" />
               SYS ONLINE

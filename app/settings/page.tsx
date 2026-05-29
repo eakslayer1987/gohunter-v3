@@ -31,6 +31,8 @@ export default function SettingsPage() {
   const setTheme = useSettingsStore((s) => s.setTheme);
   const haptics = useSettingsStore((s) => s.haptics);
   const setHaptics = useSettingsStore((s) => s.setHaptics);
+  const testMode = useSettingsStore((s) => s.testMode);
+  const setTestMode = useSettingsStore((s) => s.setTestMode);
 
   const auth = useAuthStore();
   const player = useGameStore((s) => s.player);
@@ -102,6 +104,23 @@ export default function SettingsPage() {
             </Row>
             <Row label="HAPTICS" sub="สั่นเมื่อกดปุ่มสำคัญ (มือถือ)">
               <Toggle on={haptics} onClick={() => setHaptics(!haptics)} />
+            </Row>
+            <Row
+              label="TEST_MODE"
+              sub="∞ stamina — เล่น contracts ติดกันได้ไม่ติด regen (โหมดทดสอบ)"
+            >
+              <Toggle
+                on={testMode}
+                onClick={() => {
+                  const next = !testMode;
+                  setTestMode(next);
+                  toast.info(
+                    next
+                      ? '▸ TEST_MODE // ON — ∞ STAMINA'
+                      : '▸ TEST_MODE // OFF — STAMINA RESTRICTED',
+                  );
+                }}
+              />
             </Row>
           </div>
 
