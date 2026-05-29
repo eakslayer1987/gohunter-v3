@@ -8,9 +8,6 @@ import clsx from 'clsx';
 interface NavTab {
   id: string;
   label: string;
-  /** Anchor id to scroll to on the lobby (when staying on this page).
-   *  When undefined, click emits a "RESERVED" toast — stub for future pages. */
-  anchor?: string;
   /** Mark as the current page; gets the active underline + cyan glow. */
   active?: boolean;
 }
@@ -18,9 +15,9 @@ interface NavTab {
 const NAV_TABS: NavTab[] = [
   { id: 'dashboard', label: 'DASHBOARD', active: true },
   { id: 'hunters', label: 'HUNTERS' },
-  { id: 'contracts', label: 'CONTRACTS', anchor: 'contracts' },
+  { id: 'contracts', label: 'CONTRACTS' },
   { id: 'market', label: 'MARKET' },
-  { id: 'leaderboard', label: 'LEADERBOARD', anchor: 'leaderboard' },
+  { id: 'leaderboard', label: 'LEADERBOARD' },
   { id: 'shop', label: 'SHOP' },
 ];
 
@@ -30,13 +27,6 @@ export default function TopBar() {
 
   const onTabClick = (tab: NavTab) => {
     if (tab.active) return;
-    if (tab.anchor) {
-      const el = document.getElementById(tab.anchor);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        return;
-      }
-    }
     toast.info(`▸ ${tab.label} // RESERVED — coming in next bundle`);
   };
 

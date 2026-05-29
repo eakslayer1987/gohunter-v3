@@ -9,22 +9,21 @@ import Bar from '@/components/ui/Bar';
 import BevelFrame from '@/components/ui/BevelFrame';
 import HolyCoinAura from '@/components/lobby/HolyCoinAura';
 import TopBar from '@/components/lobby/TopBar';
-import CompanionPanel from '@/components/lobby/CompanionPanel';
-import TribeSelector from '@/components/lobby/TribeSelector';
-import ContractCard from '@/components/lobby/ContractCard';
-import LeaderboardPreview from '@/components/lobby/LeaderboardPreview';
-import DailyLogin from '@/components/lobby/DailyLogin';
+import JellyCompanionPanel from '@/components/lobby/JellyCompanionPanel';
 import IntelModal from '@/components/lobby/IntelModal';
-import AchievementsModal from '@/components/lobby/AchievementsModal';
 import SiteFooter from '@/components/lobby/SiteFooter';
-import { MATCHES } from '@/data/locations';
 import { useGameStore } from '@/store/gameStore';
 import { toast } from '@/store/toastStore';
 import { BANGKOK_LOCATIONS } from '@/data/locations';
 import { getTribe } from '@/data/tribes';
 
-const QUICK_DEPLOY_COST = 20; // Classic grid stamina cost — mirrors MATCHES[1].
+const QUICK_DEPLOY_COST = 20;
 
+/** Lobby — port of ui_kits/coin-hunter/Lobby.jsx structure.
+ *  Three-column hero (copy / Holy Coin halo / Avatar showcase) on lg+,
+ *  followed by a single 2-col bottom row (Game Modes | Jelly Companion)
+ *  and the site footer. No Daily Login, Tribe Selector, Contracts grid,
+ *  or Leaderboard sections — those live on their own routes now. */
 export default function LobbyPage() {
   const router = useRouter();
   const startMatch = useGameStore((s) => s.startMatch);
@@ -37,9 +36,6 @@ export default function LobbyPage() {
   const tribe = getTribe(player.tribe);
 
   const [intelOpen, setIntelOpen] = useState(false);
-  const [achievementsOpen, setAchievementsOpen] = useState(false);
-  const achievements = useGameStore((s) => s.achievements);
-  const achievementsUnlocked = achievements.filter((a) => a.unlockedAt).length;
 
   useEffect(() => {
     ensureAgentId();
@@ -71,144 +67,116 @@ export default function LobbyPage() {
       <CyberBackdrop accent="violet" withRadar />
       <Particles count={6} />
 
-      <div className="relative z-10 max-w-[1600px] mx-auto px-4 sm:px-9 py-5 sm:py-7">
+      <div className="relative z-10 max-w-[1640px] mx-auto px-4 sm:px-9 py-5 sm:py-7">
         <TopBar />
-        <DailyLogin />
 
-        {/* ─── HERO + COIN + AVATAR SHOWCASE — 3 columns on lg+.
-            Ratios tuned so hero text gets the most space (it carries
-            the title + bullets + 2 CTAs), coin column stays narrow
-            enough that the rings don't get clipped by lateral neighbours,
-            and avatar showcase keeps room for its 4-up stat chip row. */}
-        <section className="grid lg:grid-cols-[1.1fr_280px_1.05fr] xl:grid-cols-[1.15fr_320px_1fr] gap-4 lg:gap-5 mb-6 sm:mb-8 items-start">
-          {/* LEFT — title + copy + CTAs (coin moved to dedicated middle col) */}
+        {/* ─── HERO — 3 columns on lg+ ─── */}
+        <section className="grid lg:grid-cols-[1fr_1.05fr_1.15fr] gap-5 mb-6 items-start">
+          {/* LEFT — title + copy + CTAs */}
           <div className="relative">
-            <div className="dl mb-3.5">// PROTOCOL_INIT_001 — WELCOME, AGENT</div>
+            <div className="dl mb-3.5">// PROTOCOL_INIT_001 -- WELCOME, AGENT</div>
 
-            <h1 className="font-display text-3xl sm:text-4xl lg:text-[52px] xl:text-[60px] font-extrabold leading-[.95] mb-4 sm:mb-5 tracking-cyber relative z-10">
-              {/* GO HUNTER — single line (whitespace-nowrap so it never
-                  breaks between GO and HUNTER even on tighter columns) */}
+            <h1 className="font-display text-3xl sm:text-4xl lg:text-[48px] xl:text-[52px] font-extrabold leading-[1.05] mb-4 tracking-cyber">
               <span
                 className="block whitespace-nowrap"
                 style={{
-                  background: 'linear-gradient(90deg, #71ff28, #00f6ff, #168cff)',
+                  background:
+                    'linear-gradient(90deg, #71ff28, #00f6ff, #168cff, #71ff28)',
+                  backgroundSize: '200% auto',
                   WebkitBackgroundClip: 'text',
                   backgroundClip: 'text',
                   color: 'transparent',
                   textShadow: '0 0 24px rgba(0,246,255,0.18)',
+                  animation: 'shimmer-bg 8s linear infinite',
                 }}
               >
                 GO HUNTER
               </span>
-              {/* HOLY COIN — also single line for consistent rhythm */}
               <span
                 className="block whitespace-nowrap"
                 style={{
-                  background: 'linear-gradient(90deg, #8e30ff, #ff35e6)',
+                  background: 'linear-gradient(90deg, #8e30ff, #ff35e6, #8e30ff)',
+                  backgroundSize: '200% auto',
                   WebkitBackgroundClip: 'text',
                   backgroundClip: 'text',
                   color: 'transparent',
                   textShadow: '0 0 26px rgba(255,43,187,0.28)',
+                  animation: 'shimmer-bg 8s linear infinite',
+                  animationDelay: '-2s',
                 }}
               >
                 HOLY COIN
               </span>
             </h1>
 
-            <p className="font-sans text-[14px] sm:text-[15px] text-white/70 leading-[1.7] max-w-md mb-5 relative z-10">
-              เข้าร่วมเครือข่ายนักล่าทั่ว Bangkok Grid — ตามล่า, สะสมเหรียญ, เลื่อนระดับสู่ตำแหน่ง{' '}
+            <p className="font-sans text-[14px] text-white/70 leading-[1.6] max-w-md mb-1">
+              เข้าร่วมเครือข่ายนักล่าทั่ว Bangkok Grid — ตามล่า, สะสมเหรียญ,
+              เลื่อนระดับสู่ตำแหน่ง{' '}
               <span className="text-cyber-gold font-display tracking-cyber">TOP HUNTER</span>
             </p>
 
-            <ul className="font-sans text-[13px] sm:text-[14px] text-cyber-cyan/85 leading-[1.85] mb-7 relative z-10">
-              <li>» เข้าร่วมเล่น — ล่าเหรียญในย่าน Bangkok Grid</li>
-              <li>» ปลดล็อค — สะสมเอ็กซ์, เลื่อนระดับ, อันล็อค contract พิเศษ</li>
-              <li>» เชื่อมต่อ — รวมก๊วน, สร้างทีม, ครองตารางผู้นำ</li>
+            <div className="font-display font-bold text-[13px] text-cyber-orange tracking-cyber my-3.5">
+              GO HUNTER HOLY COIN
+            </div>
+
+            <ul className="font-sans text-[13px] text-cyber-cyan/85 leading-[1.85] mb-6 list-none p-0 m-0">
+              <li>» เข้าร่วม — ออกล่าเหรียญในย่าน Bangkok Grid</li>
+              <li>» ปลดล็อค — ระดับขึ้น — สกิลใหม่ — companion แข็งแกร่งขึ้น</li>
+              <li>» เชื่อมต่อ — รวมก๊วน, สร้างทีม, ครองอันดับตารางผู้นำ</li>
             </ul>
 
-            <div className="flex gap-3 flex-wrap mb-3 relative z-10">
-              <Button onClick={onDeploy} disabled={!canDeploy} className="!min-w-[220px]">
-                {canDeploy
-                  ? `▸ GO NOW // -${QUICK_DEPLOY_COST}⚡`
-                  : `▸ NEED ${QUICK_DEPLOY_COST}⚡ (HAVE ${stamina})`}
+            <div className="flex gap-3 flex-wrap">
+              <Button
+                onClick={onDeploy}
+                disabled={!canDeploy}
+                className="!min-w-[180px] !flex !items-center !gap-3 !justify-between"
+              >
+                <span>GO NOW</span>
+                <span className="text-[18px] leading-none">›</span>
               </Button>
               <Button variant="ghost" onClick={() => setIntelOpen(true)}>
-                // VIEW_INTEL
+                // VIEW INTEL
               </Button>
             </div>
-
-            {/* Secondary nav — small links to other pages */}
-            <div className="flex gap-3 flex-wrap items-center font-mono text-[10px] text-cyber-cyan/70 relative z-10">
-              <button
-                type="button"
-                onClick={() => router.push('/profile')}
-                className="hover:text-cyber-cyan transition tracking-cyber"
-              >
-                ▸ PROFILE
-              </button>
-              <span className="text-white/20">·</span>
-              <button
-                type="button"
-                onClick={() => router.push('/runs')}
-                className="hover:text-cyber-cyan transition tracking-cyber"
-              >
-                ▸ MY_RUNS
-              </button>
-              <span className="text-white/20">·</span>
-              <button
-                type="button"
-                onClick={() => setAchievementsOpen(true)}
-                className="hover:text-cyber-cyan transition tracking-cyber"
-              >
-                ▸ ACHIEVEMENTS [{achievementsUnlocked}/{achievements.length}]
-              </button>
-            </div>
-
           </div>
 
-          {/* CENTER — Holy Coin with orbital aura. Hidden on mobile/tablet
-              where the layout collapses to a single column and a giant
-              decorative coin would just push real content off-screen. */}
+          {/* CENTER — Holy Coin halo. Hidden on mobile/tablet where the
+              decorative coin would push real content off-screen. */}
           <div className="hidden lg:flex items-center justify-center relative">
             <HolyCoinAura />
           </div>
 
-          {/* RIGHT — AVATAR SHOWCASE panel wrapped in BevelFrame
-              (octagonal HUD frame + 4 L-bracket corners per spec) */}
+          {/* RIGHT — Avatar showcase */}
           <BevelFrame accent="cyan" className="px-5 py-4 sm:px-6 sm:py-5">
             <h2 className="text-center font-display tracking-widest2 text-cyber-cyan text-[13px] sm:text-[15px] font-bold mb-3">
               AVATAR SHOWCASE
             </h2>
 
-            {/* Avatar stage with character image + glowing pedestal.
-                Uses inset-0 flex centering so the avatar is truly
-                bottom-center regardless of intrinsic image width. */}
             <div
               className="relative mb-4 overflow-hidden"
               style={{
-                height: '440px',
+                height: '320px',
                 background:
                   'radial-gradient(circle at 50% 78%, rgba(88,42,255,0.42), transparent 38%), radial-gradient(circle at 50% 30%, rgba(0,246,255,0.1), transparent 30%)',
                 border: '1px solid rgba(0,246,255,0.18)',
               }}
             >
-              {/* Avatar wrapper — flex item bottom-centered. Image
-                  scales by height, fallback sibling activates onError. */}
-              <div className="absolute inset-0 flex items-end justify-center pb-16 z-10">
+              <div className="absolute inset-0 flex items-end justify-center pb-12 z-10">
                 <img
                   src="/assets/img/agent-avatar.png"
                   alt="Agent avatar"
                   className="animate-hover-float"
                   style={{
-                    height: '360px',
+                    height: '270px',
                     width: 'auto',
                     maxWidth: '90%',
                     objectFit: 'contain',
-                    filter: 'drop-shadow(0 0 28px rgba(167,139,250,0.6))',
+                    filter: 'drop-shadow(0 0 24px rgba(167,139,250,0.6))',
                   }}
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
-                    const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+                    const fallback = e.currentTarget
+                      .nextElementSibling as HTMLElement | null;
                     if (fallback) fallback.style.display = 'flex';
                   }}
                 />
@@ -224,28 +192,25 @@ export default function LobbyPage() {
                   </div>
                 </div>
               </div>
-              {/* Triple pedestal rings — outer violet glow + inner cyan
-                  hairline. Both pulse on the same 4.2s loop, the cyan ring
-                  offset by 0.4s so the breathing rhythm reads as nested
-                  rather than synchronised. */}
+              {/* Triple pedestal — violet outer + cyan inner, both pulse. */}
               <div
-                className="absolute left-1/2 pointer-events-none z-0 animate-pedestal-pulse"
+                className="absolute left-1/2 -translate-x-1/2 pointer-events-none z-0 animate-pedestal-pulse"
                 style={{
-                  bottom: '36px',
-                  width: '320px',
-                  height: '64px',
+                  bottom: '28px',
+                  width: '260px',
+                  height: '50px',
                   borderRadius: '50%',
                   border: '2px solid rgba(168,60,255,0.65)',
                   boxShadow:
-                    '0 0 36px #743aff, 0 0 80px rgba(116,58,255,0.45), inset 0 0 28px rgba(0,246,255,0.4)',
+                    '0 0 36px #743aff, 0 0 80px rgba(116,58,255,0.45), inset 0 0 24px rgba(0,246,255,0.4)',
                 }}
               />
               <div
-                className="absolute left-1/2 pointer-events-none z-0 animate-pedestal-pulse"
+                className="absolute left-1/2 -translate-x-1/2 pointer-events-none z-0 animate-pedestal-pulse"
                 style={{
-                  bottom: '24px',
-                  width: '244px',
-                  height: '38px',
+                  bottom: '18px',
+                  width: '200px',
+                  height: '30px',
                   borderRadius: '50%',
                   border: '1px solid rgba(0,246,255,0.45)',
                   animationDelay: '0.4s',
@@ -253,7 +218,6 @@ export default function LobbyPage() {
               />
             </div>
 
-            {/* Stat chips row */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <StatChip
                 label="LEVEL"
@@ -280,20 +244,14 @@ export default function LobbyPage() {
               />
             </div>
 
-            {/* Brand chip below */}
             <div className="text-center font-mono text-[9px] text-white/35 tracking-widest2 mt-3 pt-3 border-t border-dashed border-cyber-cyan/15">
               COIN HUNTER // BANGKOK.GRID
             </div>
           </BevelFrame>
         </section>
 
-        {/* ─── TRIBE SELECTOR ─── */}
-        <div className="mb-6">
-          <TribeSelector />
-        </div>
-
-        {/* ─── GAME MODES ─── */}
-        <section className="mb-6">
+        {/* ─── BOTTOM ROW — Game modes (1.4fr) | Companion (1fr) ─── */}
+        <section className="grid lg:grid-cols-[1.4fr_1fr] gap-5 mb-6">
           <div className="hud p-4 sm:p-5">
             <div className="dl mb-3">// SELECT_GAME_MODE</div>
             <h2 className="text-center font-display tracking-widest2 text-cyber-cyan text-[13px] sm:text-[15px] font-bold mb-4">
@@ -310,7 +268,7 @@ export default function LobbyPage() {
               />
               <ModeCard
                 label="PVP"
-                sub="Hunter vs Hunter · coming soon"
+                sub="Hunter vs Hunter"
                 icon={<PvpIcon />}
                 accent="#D82DFF"
                 onClick={() =>
@@ -320,7 +278,7 @@ export default function LobbyPage() {
               />
               <ModeCard
                 label="TEAM DUELS"
-                sub="Squad Battle · coming soon"
+                sub="Squad Battle"
                 icon={<TeamIcon />}
                 accent="#FBBF24"
                 onClick={() =>
@@ -330,45 +288,24 @@ export default function LobbyPage() {
               />
             </div>
           </div>
+
+          <JellyCompanionPanel />
         </section>
-
-        {/* ─── CONTRACTS (4-card) ─── */}
-        <div id="contracts" className="mb-6 scroll-mt-6">
-          <div className="dl mb-3">
-            // CONTRACT_TYPES [ {MATCHES.length.toString().padStart(2, '0')} AVAILABLE ]
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {MATCHES.map((m) => (
-              <ContractCard key={m.id} match={m} />
-            ))}
-          </div>
-        </div>
-
-        {/* ─── COMPANION + LEADERBOARD ─── */}
-        <div id="leaderboard" className="grid lg:grid-cols-2 gap-4 mb-6 scroll-mt-6">
-          <CompanionPanel />
-          <LeaderboardPreview />
-        </div>
 
         <SiteFooter />
       </div>
 
       <IntelModal open={intelOpen} onClose={() => setIntelOpen(false)} />
-      <AchievementsModal
-        open={achievementsOpen}
-        onClose={() => setAchievementsOpen(false)}
-      />
     </main>
   );
 }
 
+// ─────────────────────── STAT CHIP
 interface StatChipProps {
   label: string;
   value: string;
   accent: string;
-  /** Either a glyph string (fallback) or an inline SVG node. */
   icon?: React.ReactNode;
-  /** 0..1 progress bar shown under the value when provided. */
   progress?: number;
 }
 
@@ -379,8 +316,7 @@ function StatChip({ label, value, accent, icon, progress }: StatChipProps) {
       style={{
         background: `${accent}0a`,
         border: `1px solid ${accent}3f`,
-        clipPath:
-          'polygon(8% 0, 100% 0, 92% 100%, 0 100%)',
+        clipPath: 'polygon(8% 0, 100% 0, 92% 100%, 0 100%)',
       }}
     >
       <div className="flex items-center gap-1.5 mb-0.5">
@@ -406,6 +342,7 @@ function StatChip({ label, value, accent, icon, progress }: StatChipProps) {
   );
 }
 
+// ─────────────────────── MODE CARD
 interface ModeCardProps {
   label: string;
   sub: string;
@@ -416,7 +353,15 @@ interface ModeCardProps {
   comingSoon?: boolean;
 }
 
-function ModeCard({ label, sub, icon, accent, onClick, disabled, comingSoon }: ModeCardProps) {
+function ModeCard({
+  label,
+  sub,
+  icon,
+  accent,
+  onClick,
+  disabled,
+  comingSoon,
+}: ModeCardProps) {
   return (
     <button
       type="button"
@@ -426,7 +371,7 @@ function ModeCard({ label, sub, icon, accent, onClick, disabled, comingSoon }: M
       style={{
         background: `linear-gradient(135deg, ${accent}12, transparent 70%)`,
         border: `1px solid ${accent}80`,
-        padding: '22px 20px',
+        padding: '22px 18px',
         minHeight: '140px',
         clipPath:
           'polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px)',
@@ -438,15 +383,12 @@ function ModeCard({ label, sub, icon, accent, onClick, disabled, comingSoon }: M
       <div className="flex flex-col items-center gap-2.5 text-center">
         <div
           className="shrink-0"
-          style={{
-            filter: `drop-shadow(0 0 10px ${accent})`,
-            color: accent,
-          }}
+          style={{ filter: `drop-shadow(0 0 10px ${accent})`, color: accent }}
         >
           {icon}
         </div>
         <div
-          className="font-display text-[15px] sm:text-[17px] font-extrabold tracking-cyber"
+          className="font-display text-[15px] sm:text-[16px] font-extrabold tracking-cyber"
           style={{ color: accent }}
         >
           {label}
@@ -462,8 +404,6 @@ function ModeCard({ label, sub, icon, accent, onClick, disabled, comingSoon }: M
   );
 }
 
-/** 4 small L-bracket corners inset 6px from edge — used by ModeCard.
- *  The accent prop ties the corners' colour + drop-shadow to the tile. */
 function TileCorners({ accent }: { accent: string }) {
   const base: React.CSSProperties = {
     position: 'absolute',
@@ -484,9 +424,7 @@ function TileCorners({ accent }: { accent: string }) {
   );
 }
 
-/* ─────────── Inline SVG icons (ported from design ui_kits) ─────────── */
-
-/** Red-tinted faceted gem (5-sided crystal). Used in RED_GEM stat chip. */
+// ─────────────────────── ICONS
 function GemIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
@@ -502,7 +440,6 @@ function GemIcon() {
   );
 }
 
-/** Gold coin with subtle bolt + cross pattern. Used in HOLY_COIN stat chip. */
 function CoinIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
@@ -519,7 +456,6 @@ function CoinIcon() {
   );
 }
 
-/** Shield with horizontal hunter visor slit — SOLO mode tile. */
 function SoloIcon() {
   return (
     <svg width="42" height="42" viewBox="0 0 42 42" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
@@ -530,7 +466,6 @@ function SoloIcon() {
   );
 }
 
-/** Crossed swords with small flag accents — PVP mode tile. */
 function PvpIcon() {
   return (
     <svg width="42" height="42" viewBox="0 0 42 42" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
@@ -542,7 +477,6 @@ function PvpIcon() {
   );
 }
 
-/** Three-figure squad silhouette — TEAM DUELS mode tile. */
 function TeamIcon() {
   return (
     <svg width="42" height="42" viewBox="0 0 42 42" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
