@@ -69,6 +69,33 @@ export default function PlayPage() {
   const [skillFlash, setSkillFlash] = useState(false);
   const [feedIdx, setFeedIdx] = useState(0);
 
+  /** Sidebar collapse state — when true, the left HUD panel hides and
+   *  the map stretches to the full content width. Persisted to
+   *  localStorage so it survives navigation. */
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  useEffect(() => {
+    try {
+      const v = window.localStorage.getItem('coin-hunter.play.sidebarCollapsed');
+      if (v === '1') setSidebarCollapsed(true);
+    } catch {
+      /* private mode / SSR — ignore */
+    }
+  }, []);
+  const toggleSidebar = () => {
+    setSidebarCollapsed((c) => {
+      const next = !c;
+      try {
+        window.localStorage.setItem(
+          'coin-hunter.play.sidebarCollapsed',
+          next ? '1' : '0',
+        );
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
+
   useEffect(() => {
     if (!matchId || !cur) {
       router.push('/');
@@ -175,8 +202,34 @@ export default function PlayPage() {
       <div className="scanline-overlay" />
 
       <div className="relative z-10 p-3 sm:p-4 flex flex-col gap-3 min-h-screen">
-        {/* ─── TOP BAR ─── HUNT_MODE | CONTRACT | spacer | TIMER | EXIT */}
+        {/* ─── TOP BAR ─── toggle | HUNT_MODE | CONTRACT | spacer | TIMER | EXIT */}
         <div className="hud flex items-center gap-3 px-4 py-2.5 flex-wrap">
+          {/* Sidebar collapse toggle — chevron flips depending on state.
+              Visible only on lg+ where the sidebar actually takes a
+              dedicated column; on mobile the sidebar stacks below the
+              map and there's nothing to collapse. */}
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            title={sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar — expand map'}
+            aria-label="Toggle sidebar"
+            className="hidden lg:flex w-8 h-8 items-center justify-center text-cyber-cyan hover:bg-cyber-cyan/15 transition shrink-0"
+            style={{
+              background: 'rgba(34,211,238,0.05)',
+              border: '1px solid rgba(34,211,238,0.35)',
+              clipPath:
+                'polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%)',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              {sidebarCollapsed ? (
+                <path d="M9 6l6 6-6 6" />
+              ) : (
+                <path d="M15 6l-6 6 6 6" />
+              )}
+            </svg>
+          </button>
+
           <button
             type="button"
             className="btn-ghost !py-1.5 !px-3 !text-[11px]"
@@ -206,10 +259,20 @@ export default function PlayPage() {
           </button>
         </div>
 
-        {/* ─── MAIN — left sidebar + center street view ─── */}
-        <div className="grid lg:grid-cols-[280px_1fr] gap-3 flex-1 min-h-0 pb-20 lg:pb-0">
-          {/* ─── LEFT SIDEBAR ─── */}
-          <div className="flex flex-col gap-3 order-2 lg:order-1">
+        {/* ─── MAIN — left sidebar + center street view. Grid swaps to
+            single-column when sidebar is collapsed so the map fills
+            the row. Mobile (below lg) always stacks. */}
+        <div
+          className={`grid gap-3 flex-1 min-h-0 pb-20 lg:pb-0 ${
+            sidebarCollapsed ? 'lg:grid-cols-[1fr]' : 'lg:grid-cols-[280px_1fr]'
+          }`}
+        >
+          {/* ─── LEFT SIDEBAR — fully hidden when collapsed ─── */}
+          <div
+            className={`flex-col gap-3 order-2 lg:order-1 ${
+              sidebarCollapsed ? 'hidden' : 'flex'
+            }`}
+          >
             {/* INTEL_BRIEFING */}
             <div className="hud v p-3">
               <div className="flex items-center gap-2 mb-2">
@@ -500,11 +563,14 @@ interface TacticalMapProps {
 }
 
 function TacticalMapCard({ onGuess, hasPin, pinCoords }: TacticalMapProps) {
+  // Slimmed minimap — 300 → 240 width, 180 → 150 height. Keeps the
+  // tactical inset useful for pin placement without occluding the
+  // primary map below it.
   return (
     <div
       className="flex flex-col"
       style={{
-        width: 300,
+        width: 240,
         background: 'rgba(5,3,10,0.92)',
         border: '1px solid rgba(34,211,238,0.55)',
         clipPath:
@@ -513,30 +579,30 @@ function TacticalMapCard({ onGuess, hasPin, pinCoords }: TacticalMapProps) {
         backdropFilter: 'blur(8px)',
       }}
     >
-      <div className="flex items-center px-3 py-1.5 border-b border-cyber-cyan/20">
-        <span className="font-mono text-[10px] text-cyber-cyan tracking-widest2">
+      <div className="flex items-center px-2.5 py-1 border-b border-cyber-cyan/20">
+        <span className="font-mono text-[9px] text-cyber-cyan tracking-widest2">
           <span className="inline-block w-1.5 h-1.5 bg-cyber-cyan rounded-full mr-1.5 align-middle animate-pulse-dot" />
           TACTICAL_MAP
         </span>
         <span className="flex-1" />
-        <span className="font-mono text-[9px] text-white/55 tabular-nums">
+        <span className="font-mono text-[8px] text-white/55 tabular-nums">
           {pinCoords
             ? `${pinCoords.lat.toFixed(2)}°N · ${pinCoords.lng.toFixed(2)}°E`
             : '13.74°N · 100.56°E'}
         </span>
       </div>
-      <div className="relative h-[180px]">
+      <div className="relative h-[150px]">
         <GameMap />
       </div>
       <div className="flex items-stretch px-2 py-1.5 gap-2 border-t border-cyber-cyan/20">
         <span className="font-mono text-[9px] text-white/45 self-center flex-1">
-          ▸ {hasPin ? 'PIN_LOCKED' : 'CLICK TO PLACE PIN'}
+          ▸ {hasPin ? 'PIN_LOCKED' : 'CLICK TO PIN'}
         </span>
         <button
           type="button"
           onClick={onGuess}
           disabled={!hasPin}
-          className="btn-red !py-1.5 !px-4 !text-[11px] disabled:opacity-50"
+          className="btn-red !py-1 !px-3 !text-[10px] disabled:opacity-50"
         >
           ▸ GUESS
         </button>
