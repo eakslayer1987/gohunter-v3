@@ -45,6 +45,20 @@ export default function ResultPage() {
   const [sharing, setSharing] = useState(false);
   const shareRef = useRef<HTMLDivElement | null>(null);
 
+  /** Same hydration-race fix as /play. On prod build (fast) the
+   *  initial render sees the un-rehydrated null match and would
+   *  redirect to lobby before persist completes. */
+  const [storeHydrated, setStoreHydrated] = useState(() =>
+    useGameStore.persist.hasHydrated(),
+  );
+  useEffect(() => {
+    if (storeHydrated) return;
+    const unsub = useGameStore.persist.onFinishHydration(() =>
+      setStoreHydrated(true),
+    );
+    return () => unsub();
+  }, [storeHydrated]);
+
   useEffect(() => {
     setHasRender(true);
     // Score reveal SFX fires once when DEBRIEF mounts — pairs with
@@ -53,11 +67,21 @@ export default function ResultPage() {
   }, []);
 
   useEffect(() => {
+    if (!storeHydrated) return;
     if (!cur || !cur.completed || !cur.pinPosition) {
       router.push('/');
     }
-  }, [cur, router]);
+  }, [storeHydrated, cur, router]);
 
+  if (!storeHydrated) {
+    return (
+      <main className="cyber-screen min-h-screen flex items-center justify-center">
+        <div className="font-mono text-cyber-cyan text-[12px] tracking-widest2">
+          ▸ LOADING_DEBRIEF...
+        </div>
+      </main>
+    );
+  }
   if (!cur || !cur.completed || !cur.pinPosition) return null;
 
   const dist = cur.distanceMeters ?? 0;

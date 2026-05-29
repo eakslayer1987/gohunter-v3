@@ -113,14 +113,32 @@ export default function PlayPage() {
     });
   };
 
+  /** Track Zustand persist rehydration. Without this the guard below
+   *  fires on first paint with the initial null `currentMatchId`,
+   *  which on production-build (fast) wins the race against
+   *  rehydration and bounces the user back to lobby right after
+   *  they deploy. Dev builds were slow enough that hydration won.
+   *  Wait until persist confirms it's done before deciding. */
+  const [storeHydrated, setStoreHydrated] = useState(() =>
+    useGameStore.persist.hasHydrated(),
+  );
   useEffect(() => {
+    if (storeHydrated) return;
+    const unsub = useGameStore.persist.onFinishHydration(() =>
+      setStoreHydrated(true),
+    );
+    return () => unsub();
+  }, [storeHydrated]);
+
+  useEffect(() => {
+    if (!storeHydrated) return;
     if (!matchId || !cur) {
       router.push('/');
       return;
     }
     const id = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(id);
-  }, [matchId, cur, router]);
+  }, [storeHydrated, matchId, cur, router]);
 
   // LIVE_FEED rotates through fake events every 4s.
   useEffect(() => {
@@ -168,6 +186,19 @@ export default function PlayPage() {
   const opponentScore =
     OPPONENT_BASE_SCORE + Math.floor((now - startedAt) / 1000) * 3;
 
+  // While the persisted match state is still rehydrating, render a
+  // simple loader instead of redirecting. Once hydration finishes
+  // the guard above either keeps us here (match present) or routes
+  // back to lobby.
+  if (!storeHydrated) {
+    return (
+      <main className="cyber-screen min-h-screen flex items-center justify-center">
+        <div className="font-mono text-cyber-cyan text-[12px] tracking-widest2">
+          ▸ INIT_GRID...
+        </div>
+      </main>
+    );
+  }
   if (!cur) return null;
 
   const onSubmit = () => {
