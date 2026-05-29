@@ -12,6 +12,7 @@ import HolyCoinAura from '@/components/lobby/HolyCoinAura';
 import TopBar from '@/components/lobby/TopBar';
 import JellyCompanionPanel from '@/components/lobby/JellyCompanionPanel';
 import IntelModal from '@/components/lobby/IntelModal';
+import DailyRewardModal from '@/components/lobby/DailyRewardModal';
 import SiteFooter from '@/components/lobby/SiteFooter';
 import { useGameStore } from '@/store/gameStore';
 import { toast } from '@/store/toastStore';
@@ -33,14 +34,36 @@ export default function LobbyPage() {
   const stamina = useGameStore((s) => s.player.stamina);
   const player = useGameStore((s) => s.player);
   const ensureAgentId = useGameStore((s) => s.ensureAgentId);
+  const checkDailyLogin = useGameStore((s) => s.checkDailyLogin);
   const canDeploy = stamina >= QUICK_DEPLOY_COST;
   const tribe = getTribe(player.tribe);
 
   const [intelOpen, setIntelOpen] = useState(false);
 
+  /** Daily reward state. populated on first mount if checkDailyLogin
+   *  returns rewarded=true (the store has already applied the credit +
+   *  stamina by that point — this is just the user-facing celebration). */
+  const [dailyReward, setDailyReward] = useState<{
+    streak: number;
+    credits: number;
+  } | null>(null);
+
   useEffect(() => {
     ensureAgentId();
   }, [ensureAgentId]);
+
+  useEffect(() => {
+    // Run once on mount. checkDailyLogin is idempotent per calendar
+    // day — second call same day returns rewarded=false so we don't
+    // re-pop the modal on hot-reload.
+    const res = checkDailyLogin();
+    if (res.rewarded) {
+      // Read loginStreak fresh AFTER checkDailyLogin has incremented it.
+      const streak = useGameStore.getState().player.loginStreak;
+      setDailyReward({ streak, credits: res.reward });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     regenStamina();
@@ -320,6 +343,18 @@ export default function LobbyPage() {
       </div>
 
       <IntelModal open={intelOpen} onClose={() => setIntelOpen(false)} />
+
+      {/* Daily login-streak reward — auto-pops once per day. Stamina
+          grant is hardcoded to +15 in gameStore.checkDailyLogin so we
+          mirror that value here. */}
+      <DailyRewardModal
+        open={!!dailyReward}
+        streak={dailyReward?.streak ?? 1}
+        credits={dailyReward?.credits ?? 0}
+        stamina={15}
+        onClaim={() => setDailyReward(null)}
+        onClose={() => setDailyReward(null)}
+      />
     </main>
   );
 }
