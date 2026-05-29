@@ -759,13 +759,12 @@ function TacticalMapCard({
         backdropFilter: 'blur(8px)',
       }}
     >
-      {/* Header doubles as the expand affordance — clicking it opens
-          the overlay. Cursor changes to indicate it's interactive. */}
+      {/* Header — full-width clickable to open the expanded view. */}
       <button
         type="button"
         onClick={onExpand}
-        title="Expand map for precision pin placement"
-        className="flex items-center px-2.5 py-1.5 border-b border-cyber-cyan/20 cursor-pointer hover:bg-cyber-cyan/5 transition text-left"
+        title="Expand map (click) — easier pin placement"
+        className="flex items-center px-2.5 py-1.5 border-b border-cyber-cyan/20 cursor-pointer hover:bg-cyber-cyan/10 transition text-left"
         style={{ background: 'transparent', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
       >
         <span className="font-mono text-[9px] text-cyber-cyan tracking-widest2">
@@ -773,20 +772,60 @@ function TacticalMapCard({
           TACTICAL_MAP
         </span>
         <span className="flex-1" />
-        <span className="font-mono text-[8px] text-white/55 tabular-nums mr-1.5">
+        <span className="font-mono text-[8px] text-white/55 tabular-nums">
           {coordsLabel}
         </span>
-        {/* Expand glyph — diagonal arrows */}
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-cyber-cyan" aria-hidden>
-          <polyline points="15 3 21 3 21 9" />
-          <polyline points="9 21 3 21 3 15" />
-          <line x1="21" y1="3" x2="14" y2="10" />
-          <line x1="3" y1="21" x2="10" y2="14" />
-        </svg>
       </button>
 
       <div className="relative h-[150px]">
         <GameMap />
+
+        {/* Floating EXPAND button — sits in the top-right corner of the
+            map canvas itself so it's visible regardless of where the
+            user's eye lands. Pulses gently on hover. Click bubbling is
+            stopped so we don't double-fire onto the underlying map
+            (which has its own click-to-pin handler). */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onExpand();
+          }}
+          title="Expand map for precision pin placement"
+          aria-label="Expand map"
+          className="absolute top-1.5 right-1.5 z-[5] w-9 h-9 flex items-center justify-center text-cyber-cyan font-display text-[10px] tracking-cyber hover:bg-cyber-cyan/25 hover:scale-105 transition"
+          style={{
+            background: 'rgba(5,3,10,0.85)',
+            border: '1.5px solid rgba(34,211,238,0.7)',
+            clipPath:
+              'polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%)',
+            boxShadow: '0 0 12px rgba(34,211,238,0.55)',
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <polyline points="15 3 21 3 21 9" />
+            <polyline points="9 21 3 21 3 15" />
+            <line x1="21" y1="3" x2="14" y2="10" />
+            <line x1="3" y1="21" x2="10" y2="14" />
+          </svg>
+        </button>
+
+        {/* Hint chip under the EXPAND button so first-time users see
+            the affordance. Auto-hides after a pin is placed since by
+            then the user has figured out the interaction. */}
+        {!hasPin && (
+          <div
+            className="absolute top-1.5 left-1.5 z-[5] px-2 py-1 font-mono text-[8px] text-cyber-cyan tracking-widest2 pointer-events-none"
+            style={{
+              background: 'rgba(5,3,10,0.85)',
+              border: '1px solid rgba(34,211,238,0.45)',
+              clipPath:
+                'polygon(4px 0, calc(100% - 4px) 0, 100% 50%, calc(100% - 4px) 100%, 4px 100%, 0 50%)',
+            }}
+          >
+            ⤢ EXPAND
+          </div>
+        )}
       </div>
 
       <div className="flex items-stretch px-2 py-1.5 gap-2 border-t border-cyber-cyan/20">
