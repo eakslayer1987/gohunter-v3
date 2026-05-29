@@ -113,22 +113,24 @@ export default function PlayPage() {
     });
   };
 
-  /** Track Zustand persist rehydration. Without this the guard below
-   *  fires on first paint with the initial null `currentMatchId`,
-   *  which on production-build (fast) wins the race against
-   *  rehydration and bounces the user back to lobby right after
-   *  they deploy. Dev builds were slow enough that hydration won.
-   *  Wait until persist confirms it's done before deciding. */
-  const [storeHydrated, setStoreHydrated] = useState(() =>
-    useGameStore.persist.hasHydrated(),
-  );
+  /** Track Zustand persist rehydration. Default false so SSR/prerender
+   *  (where `useGameStore.persist` is undefined) doesn't crash. On
+   *  client mount we check hasHydrated() immediately; if true we flip
+   *  state to true, otherwise we subscribe to onFinishHydration. This
+   *  prevents the prod-build race where the guard below saw the
+   *  initial null match before persist rehydrated and bounced the
+   *  user back to lobby. Dev builds were slow enough to hide the bug. */
+  const [storeHydrated, setStoreHydrated] = useState(false);
   useEffect(() => {
-    if (storeHydrated) return;
-    const unsub = useGameStore.persist.onFinishHydration(() =>
-      setStoreHydrated(true),
-    );
+    const persist = useGameStore.persist;
+    if (!persist) return;
+    if (persist.hasHydrated()) {
+      setStoreHydrated(true);
+      return;
+    }
+    const unsub = persist.onFinishHydration(() => setStoreHydrated(true));
     return () => unsub();
-  }, [storeHydrated]);
+  }, []);
 
   useEffect(() => {
     if (!storeHydrated) return;

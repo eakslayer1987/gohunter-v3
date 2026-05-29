@@ -45,19 +45,19 @@ export default function ResultPage() {
   const [sharing, setSharing] = useState(false);
   const shareRef = useRef<HTMLDivElement | null>(null);
 
-  /** Same hydration-race fix as /play. On prod build (fast) the
-   *  initial render sees the un-rehydrated null match and would
-   *  redirect to lobby before persist completes. */
-  const [storeHydrated, setStoreHydrated] = useState(() =>
-    useGameStore.persist.hasHydrated(),
-  );
+  /** Same hydration-race fix as /play. Default false so SSR doesn't
+   *  trip on `useGameStore.persist` being undefined; flip after mount. */
+  const [storeHydrated, setStoreHydrated] = useState(false);
   useEffect(() => {
-    if (storeHydrated) return;
-    const unsub = useGameStore.persist.onFinishHydration(() =>
-      setStoreHydrated(true),
-    );
+    const persist = useGameStore.persist;
+    if (!persist) return;
+    if (persist.hasHydrated()) {
+      setStoreHydrated(true);
+      return;
+    }
+    const unsub = persist.onFinishHydration(() => setStoreHydrated(true));
     return () => unsub();
-  }, [storeHydrated]);
+  }, []);
 
   useEffect(() => {
     setHasRender(true);
