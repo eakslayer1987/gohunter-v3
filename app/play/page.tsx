@@ -18,7 +18,19 @@ import {
 import { getTribe } from '@/data/tribes';
 import { getPetStageMeta } from '@/data/pets';
 
-const HAS_STREET_VIEW = !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+const HAS_STREET_VIEW_KEY = !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+/** Hosts that are guaranteed NOT to be on the Google Maps API key's
+ *  referrer allow-list. The production key is locked to the Render
+ *  domain — if we tried to use it from localhost the embed iframe
+ *  would render but the panorama would stay black (referrer 403),
+ *  which looks broken even though everything else works. Detect these
+ *  hosts and fall back to MapLibre even when the key env var is set. */
+const STREET_VIEW_BLOCKED_HOSTS = new Set([
+  'localhost',
+  '127.0.0.1',
+  '::1',
+]);
 
 const GameMap = dynamic(() => import('@/components/game/GameMap'), {
   ssr: false,
@@ -79,6 +91,17 @@ export default function PlayPage() {
    *  precisely place / drag a pin. Not persisted — re-collapses on
    *  page navigation. */
   const [mapExpanded, setMapExpanded] = useState(false);
+
+  /** Whether to render the Street View embed. Defaults to "off" on the
+   *  server / first paint so SSR + first-client-render match (no
+   *  hydration mismatch). useEffect flips it on after we've verified
+   *  the host isn't on the blocked list. */
+  const [useStreetView, setUseStreetView] = useState(false);
+  useEffect(() => {
+    if (!HAS_STREET_VIEW_KEY) return;
+    const host = window.location.hostname;
+    if (!STREET_VIEW_BLOCKED_HOSTS.has(host)) setUseStreetView(true);
+  }, []);
   useEffect(() => {
     try {
       const v = window.localStorage.getItem('coin-hunter.play.sidebarCollapsed');
@@ -405,8 +428,11 @@ export default function PlayPage() {
               // STREET_VIEW_FEED · BANGKOK.GRID · MISSION_{String(idx + 1).padStart(2, '0')}
             </div>
 
-            {/* STREET VIEW or fallback MAP */}
-            {HAS_STREET_VIEW ? (
+            {/* STREET VIEW or fallback MAP — Street View only renders
+                when (a) the API key env var is set AND (b) we're on a
+                host that's on the key's referrer allow-list (i.e. not
+                localhost, see STREET_VIEW_BLOCKED_HOSTS above). */}
+            {useStreetView ? (
               <StreetViewWalker
                 initialLat={cur.location.lat}
                 initialLng={cur.location.lng}
