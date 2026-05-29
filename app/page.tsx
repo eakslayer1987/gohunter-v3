@@ -13,6 +13,7 @@ import TopBar from '@/components/lobby/TopBar';
 import JellyCompanionPanel from '@/components/lobby/JellyCompanionPanel';
 import IntelModal from '@/components/lobby/IntelModal';
 import DailyRewardModal from '@/components/lobby/DailyRewardModal';
+import MobileLobby from '@/components/lobby/MobileLobby';
 import SiteFooter from '@/components/lobby/SiteFooter';
 import { useGameStore } from '@/store/gameStore';
 import { toast } from '@/store/toastStore';
@@ -94,8 +95,14 @@ export default function LobbyPage() {
       <div className="relative z-10 max-w-[1640px] mx-auto px-4 sm:px-9 py-5 sm:py-7">
         <TopBar />
 
-        {/* ─── HERO — 3 columns on lg+ ─── */}
-        <section className="grid lg:grid-cols-[1fr_1.05fr_1.15fr] gap-5 mb-6 items-start">
+        {/* ─── MOBILE LOBBY — single-screen Coin Master / Free Fire
+            style. Hidden on lg+ where the 3-col hero owns the screen. */}
+        <div className="lg:hidden">
+          <MobileLobby onOpenIntel={() => setIntelOpen(true)} />
+        </div>
+
+        {/* ─── DESKTOP HERO — 3 columns on lg+ ─── */}
+        <section className="hidden lg:grid lg:grid-cols-[1fr_1.05fr_1.15fr] gap-5 mb-6 items-start">
           {/* LEFT — title + copy + CTAs */}
           <div className="relative">
             <div className="dl mb-3.5">// PROTOCOL_INIT_001 -- WELCOME, HUNTER</div>
@@ -297,8 +304,10 @@ export default function LobbyPage() {
           </BevelFrame>
         </section>
 
-        {/* ─── BOTTOM ROW — Game modes (1.4fr) | Companion (1fr) ─── */}
-        <section className="grid lg:grid-cols-[1.4fr_1fr] gap-5 mb-6">
+        {/* ─── BOTTOM ROW — Game modes (1.4fr) | Companion (1fr).
+            Desktop only — MobileLobby compresses both into the
+            single-screen layout above. */}
+        <section className="hidden lg:grid lg:grid-cols-[1.4fr_1fr] gap-5 mb-6">
           <div className="hud p-4 sm:p-5">
             <div className="dl mb-3">// SELECT_GAME_MODE</div>
             <h2 className="text-center font-display tracking-widest2 text-cyber-cyan text-[13px] sm:text-[15px] font-bold mb-4">
@@ -339,7 +348,9 @@ export default function LobbyPage() {
           <JellyCompanionPanel />
         </section>
 
-        <SiteFooter />
+        <div className="hidden lg:block">
+          <SiteFooter />
+        </div>
       </div>
 
       <IntelModal open={intelOpen} onClose={() => setIntelOpen(false)} />

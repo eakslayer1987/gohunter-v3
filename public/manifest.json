@@ -2,26 +2,62 @@
   "name": "Coin Hunter · Bangkok Grid",
   "short_name": "Coin Hunter",
   "description": "Cyber-hunter geo-guessing game in Bangkok — ตามล่าเหรียญลับใน Bangkok Grid",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
+  "id": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "portrait-primary",
   "background_color": "#05030a",
-  "theme_color": "#0a0612",
+  "theme_color": "#05030a",
   "lang": "th",
   "categories": ["games", "entertainment"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icons/icon-192.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Quick Deploy",
+      "short_name": "GO NOW",
+      "description": "Deploy a Classic Grid contract immediately",
+      "url": "/?action=deploy",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Pets",
+      "short_name": "Pets",
+      "url": "/pets",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Leaderboard",
+      "short_name": "Rank",
+      "url": "/leaderboard",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
     }
   ]
 }
