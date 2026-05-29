@@ -305,19 +305,29 @@ export default function PlayPage() {
             </svg>
           </button>
 
-          <button
-            type="button"
-            className="btn-ghost !py-1.5 !px-3 !text-[11px]"
-            onClick={() => toast.info('▸ HUNT_MODE_ACTIVE')}
+          {/* HUNT_MODE pill — purely informational, no longer an
+              interactive button (clicking it just toasted, which was
+              noise). Combined with the CONTRACT label so the strip
+              reads as one piece of state. */}
+          <div
+            className="inline-flex items-center gap-2 px-2.5 py-1 font-display font-bold text-[10px] sm:text-[11px] tracking-widest2"
+            style={{
+              background: 'rgba(167,139,250,0.10)',
+              border: '1px solid rgba(167,139,250,0.45)',
+              color: 'var(--cy-violet)',
+              clipPath:
+                'polygon(6px 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0 50%)',
+            }}
           >
-            ▸ HUNT_MODE
-          </button>
-          <div className="font-display text-[12px] sm:text-[13px] text-cyber-cyan font-bold tracking-cyber">
-            CONTRACT_{String(idx + 1).padStart(2, '0')} · {matchCodename}
+            <span className="w-1.5 h-1.5 rounded-full bg-cyber-violet animate-pulse-dot" />
+            HUNT_MODE
+          </div>
+          <div className="font-display text-[12px] sm:text-[13px] text-cyber-cyan font-bold tracking-cyber truncate">
+            {matchCodename} · {String(idx + 1).padStart(2, '0')}
           </div>
           <div className="flex-1" />
           <div className="flex items-center gap-2 font-mono">
-            <span className="text-cyber-cyan/65 text-[10px] tracking-widest2">// TIMER</span>
+            <span className="hidden sm:inline text-cyber-cyan/65 text-[10px] tracking-widest2">// TIMER</span>
             <span
               className="font-display text-cyber-cyan text-[18px] sm:text-[22px] font-bold tabular-nums"
               style={{ textShadow: '0 0 12px rgba(34,211,238,0.6)' }}
@@ -389,40 +399,46 @@ export default function PlayPage() {
               )}
             </div>
 
-            {/* PIN_ENERGY_RESERVE */}
+            {/* PIN_ENERGY + COMPANION_SKILL — compacted into a single
+                 HUD card. Top half is the energy bar, bottom is the
+                 pet skill trigger. Halves the sidebar's vertical
+                 footprint vs the two separate cards we shipped first. */}
             <div className="hud p-3">
-              <div className="flex items-center mb-2">
-                <span className="dl">// PIN_ENERGY_RESERVE</span>
+              {/* Energy half */}
+              <div className="flex items-center mb-1.5">
+                <span className="font-mono text-[9px] text-cyber-cyan/70 tracking-cyber">
+                  ⚡ PIN_ENERGY
+                </span>
                 <span className="flex-1" />
                 <span className="font-mono text-[10px] text-cyber-cyan tabular-nums">
                   {pinEnergy} / 20
                 </span>
               </div>
-              <Bar value={pinEnergy} max={20} height={4} />
-              <div className="font-mono text-[9px] text-white/45 mt-1.5">
+              <Bar value={pinEnergy} max={20} height={3} />
+              <div className="font-mono text-[8px] text-white/35 mt-1">
                 ▸ DRAG = -1 / 100M
               </div>
-            </div>
 
-            {/* COMPANION_SKILL */}
-            <button
-              type="button"
-              onClick={onSkill}
-              disabled={!petSkillReady()}
-              className="hud p-3 text-left transition hover:bg-cyber-cyan/5 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <div className="dl mb-2">// COMPANION_SKILL</div>
-              <div className="flex items-center gap-2">
-                <span className="text-[18px]">{petMeta.emoji}</span>
-                <span className="font-display text-[12px] text-cyber-cyan font-bold tracking-cyber">
+              {/* Divider */}
+              <div className="h-px my-2.5 bg-white/8" />
+
+              {/* Companion skill half — tap to use */}
+              <button
+                type="button"
+                onClick={onSkill}
+                disabled={!petSkillReady()}
+                className="w-full flex items-center gap-2 text-left transition hover:bg-cyber-cyan/5 disabled:opacity-50 disabled:cursor-not-allowed -mx-1 px-1 py-0.5"
+              >
+                <span className="text-[16px] leading-none shrink-0">{petMeta.emoji}</span>
+                <span className="font-display text-[11px] text-cyber-cyan font-bold tracking-cyber truncate">
                   {pet.skill.name}
                 </span>
                 <span className="flex-1" />
-                <span className="font-mono text-[10px] text-cyber-gold">
-                  · {pet.skill.cooldown}s CD
+                <span className="font-mono text-[9px] text-cyber-gold shrink-0">
+                  {pet.skill.cooldown}s CD
                 </span>
-              </div>
-            </button>
+              </button>
+            </div>
 
             {/* LIVE_FEED — pulls from the opponent timeline so the
                 player sees their rival's actions in real time. Empty
@@ -471,11 +487,6 @@ export default function PlayPage() {
               border: '1px solid rgba(34,211,238,0.35)',
             }}
           >
-            {/* TOP_LABEL — // STREET_VIEW_FEED ... */}
-            <div className="absolute top-2.5 left-3.5 z-[6] font-mono text-[10px] text-cyber-cyan/75 tracking-widest2 pointer-events-none">
-              // STREET_VIEW_FEED · BANGKOK.GRID · MISSION_{String(idx + 1).padStart(2, '0')}
-            </div>
-
             {/* STREET VIEW or MAP view. Default: Street View when the
                 API key is present. User can flip back to MapLibre via
                 the toggle pill below if Street View is blocked /
@@ -557,13 +568,10 @@ export default function PlayPage() {
               accent="red"
             />
 
-            {/* ZOOM TOOLS — bottom-left vertical cluster */}
-            <div className="hidden sm:flex absolute bottom-3 left-3 z-[6] flex-col gap-1">
-              <ToolButton label="+" title="Zoom in (stub)" onClick={() => toast.info('▸ ZOOM_IN // RESERVED')} />
-              <ToolButton label="−" title="Zoom out (stub)" onClick={() => toast.info('▸ ZOOM_OUT // RESERVED')} />
-              <ToolButton label="↺" title="Recenter (stub)" onClick={() => toast.info('▸ RECENTER // RESERVED')} />
-              <ToolButton label="⚑" title="Drop marker (stub)" onClick={() => toast.info('▸ MARKER // RESERVED')} />
-            </div>
+            {/* Zoom / pan tools dropped — they were stubs that just
+                toasted RESERVED and added visual noise. Real
+                navigation is via Street View's native chrome and
+                MapLibre's NavigationControl. */}
 
             {/* TACTICAL_MAP minimap. Collapsed = corner inset.
                 Expanded = full-screen overlay with backdrop.
@@ -687,33 +695,6 @@ function PlayerScoreBadge({ side, tribeEmoji, name, score, accent }: BadgeProps)
         SCORE {score.toLocaleString()}
       </span>
     </div>
-  );
-}
-
-function ToolButton({
-  label,
-  title,
-  onClick,
-}: {
-  label: string;
-  title: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      title={title}
-      onClick={onClick}
-      className="w-9 h-9 flex items-center justify-center text-cyber-cyan font-display text-[14px] hover:bg-cyber-cyan/15 transition"
-      style={{
-        background: 'rgba(5,3,10,0.85)',
-        border: '1px solid rgba(34,211,238,0.4)',
-        clipPath:
-          'polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px)',
-      }}
-    >
-      {label}
-    </button>
   );
 }
 
@@ -929,22 +910,9 @@ function TacticalMapCard({
           </svg>
         </button>
 
-        {/* Hint chip under the EXPAND button so first-time users see
-            the affordance. Auto-hides after a pin is placed since by
-            then the user has figured out the interaction. */}
-        {!hasPin && (
-          <div
-            className="absolute top-1.5 left-1.5 z-[5] px-2 py-1 font-mono text-[8px] text-cyber-cyan tracking-widest2 pointer-events-none"
-            style={{
-              background: 'rgba(5,3,10,0.85)',
-              border: '1px solid rgba(34,211,238,0.45)',
-              clipPath:
-                'polygon(4px 0, calc(100% - 4px) 0, 100% 50%, calc(100% - 4px) 100%, 4px 100%, 0 50%)',
-            }}
-          >
-            ⤢ EXPAND
-          </div>
-        )}
+        {/* Hint chip dropped — the floating EXPAND button is a strong
+            enough affordance on its own once the minimap has a
+            character. */}
       </div>
 
       <div className="flex items-stretch px-2 py-1.5 gap-2 border-t border-cyber-cyan/20">
