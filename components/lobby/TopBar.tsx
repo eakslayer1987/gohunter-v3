@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Pill from '@/components/ui/Pill';
+import NotificationsPanel, {
+  useUnreadCount,
+} from '@/components/lobby/NotificationsPanel';
 import { useSoundStore } from '@/store/soundStore';
 import { useAuthStore } from '@/store/authStore';
 import { useGameStore } from '@/store/gameStore';
@@ -48,9 +51,13 @@ export default function TopBar() {
   const addStamina = useGameStore((s) => s.addStamina);
   const addCredits = useGameStore((s) => s.addCredits);
   const testMode = useSettingsStore((s) => s.testMode);
+  const markNotificationsSeen = useSettingsStore((s) => s.markNotificationsSeen);
+  const unreadCount = useUnreadCount();
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const notifRef = useRef<HTMLDivElement | null>(null);
 
   /** Close menu on outside click + Escape. Without this the dropdown
    *  stays open after the user navigates and re-orients on the new
@@ -172,15 +179,41 @@ export default function TopBar() {
           </>
         )}
 
-        <IconBtn
-          title="Notifications"
-          onClick={() => toast.info('▸ NO NEW ALERTS')}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9" />
-            <path d="M10 21a2 2 0 004 0" />
-          </svg>
-        </IconBtn>
+        {/* Bell icon — toggles NotificationsPanel. Opening marks all
+            items seen via settingsStore so the badge clears. */}
+        <div className="relative" ref={notifRef}>
+          <IconBtn
+            title={`Notifications${unreadCount > 0 ? ` (${unreadCount} new)` : ''}`}
+            onClick={() => {
+              const opening = !notifOpen;
+              setNotifOpen(opening);
+              if (opening) markNotificationsSeen();
+            }}
+            pressed={notifOpen}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9" />
+              <path d="M10 21a2 2 0 004 0" />
+            </svg>
+            {unreadCount > 0 && !notifOpen && (
+              <span
+                className="absolute -top-1 -right-1 font-display font-extrabold text-[9px] leading-none flex items-center justify-center min-w-[14px] h-[14px] px-1"
+                style={{
+                  background: 'var(--cy-red)',
+                  color: '#fff',
+                  borderRadius: '50%',
+                  boxShadow: '0 0 8px rgba(253,24,3,0.7)',
+                }}
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </IconBtn>
+          <NotificationsPanel
+            open={notifOpen}
+            onClose={() => setNotifOpen(false)}
+          />
+        </div>
         <IconBtn
           title={soundEnabled ? 'Mute audio' : 'Unmute audio'}
           onClick={toggleSound}

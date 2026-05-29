@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button';
 import Bar from '@/components/ui/Bar';
 import { StreetViewWalker } from '@/components/game/StreetViewWalker';
 import { useGameStore } from '@/store/gameStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { toast } from '@/store/toastStore';
 import {
   distanceMeters,
@@ -59,6 +60,9 @@ export default function PlayPage() {
   const usePetSkill = useGameStore((s) => s.usePetSkill);
   const petSkillReady = useGameStore((s) => s.petSkillReady);
   const pet = useGameStore((s) => s.pet);
+  const testMode = useSettingsStore((s) => s.testMode);
+  const playViewMode = useSettingsStore((s) => s.playViewMode);
+  const setPlayViewMode = useSettingsStore((s) => s.setPlayViewMode);
 
   const cur = missions[idx];
   const tribe = getTribe(player.tribe);
@@ -80,16 +84,17 @@ export default function PlayPage() {
    *  page navigation. */
   const [mapExpanded, setMapExpanded] = useState(false);
 
-  /** Whether to render the Street View embed. Defaults to "off" on the
-   *  server / first paint so SSR + first-client-render match (no
-   *  hydration mismatch). useEffect flips it on once the key env var
-   *  is verified at runtime. User can also toggle manually via the
-   *  pill in the top-left of the stage if Street View is blocked or
-   *  unavailable for the current location. */
+  /** Resolved view mode after considering both the persisted user
+   *  preference (playViewMode) and the default (Street View when the
+   *  API key is present). Starts false on SSR/first paint to avoid
+   *  hydration mismatch; useEffect flips to the right value once
+   *  settings have rehydrated. */
   const [useStreetView, setUseStreetView] = useState(false);
   useEffect(() => {
-    if (HAS_STREET_VIEW_KEY) setUseStreetView(true);
-  }, []);
+    if (playViewMode === 'streetview') setUseStreetView(true);
+    else if (playViewMode === 'map') setUseStreetView(false);
+    else setUseStreetView(HAS_STREET_VIEW_KEY); // null → follow default
+  }, [playViewMode]);
   useEffect(() => {
     try {
       const v = window.localStorage.getItem('coin-hunter.play.sidebarCollapsed');
@@ -233,7 +238,13 @@ export default function PlayPage() {
     router.push('/result');
   };
 
-  const onHint = () => useHint();
+  const onHint = () => {
+    const ok = useHint();
+    if (!ok) {
+      const credits = useGameStore.getState().player.credits;
+      toast.error(`▸ NEED 50CR // YOU HAVE ${credits.toLocaleString()}CR`);
+    }
+  };
   const onSkill = () => {
     if (usePetSkill()) {
       setSkillFlash(true);
@@ -370,7 +381,7 @@ export default function PlayPage() {
                     border: '1px dashed rgba(167,139,250,.35)',
                   }}
                 >
-                  ▸ CLUE_0{visibleClues.length + 1}_LOCKED · COST 50CR
+                  ▸ CLUE_0{visibleClues.length + 1}_LOCKED · {testMode ? 'FREE [∞ TEST]' : 'COST 50CR'}
                 </button>
               )}
             </div>
@@ -473,7 +484,10 @@ export default function PlayPage() {
             {HAS_STREET_VIEW_KEY && (
               <button
                 type="button"
-                onClick={() => setUseStreetView((v) => !v)}
+                onClick={() => {
+                  // Persist the user's pick — survives refresh + nav.
+                  setPlayViewMode(useStreetView ? 'map' : 'streetview');
+                }}
                 title={
                   useStreetView
                     ? 'Switch to top-down map (if Street View is blank)'

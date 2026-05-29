@@ -49,7 +49,10 @@ interface GameStore {
   startMatch: (matchId: string, locations: Location[]) => void;
   setPin: (lat: number, lng: number) => void;
   dragPin: (lat: number, lng: number) => void;
-  useHint: () => void;
+  /** Decrypt the next clue. Costs HINT_COST_CR credits (free in
+   *  TEST_MODE). Returns false + leaves state untouched when the
+   *  player can't afford it; UI surfaces an INSUFFICIENT toast. */
+  useHint: () => boolean;
   extendTime: (seconds: number) => void;
   submitMission: (opts: {
     score: number;
@@ -88,6 +91,7 @@ interface GameStore {
 
 const STAMINA_REGEN_INTERVAL_MS = 5 * 60 * 1000; // +1 stamina every 5 minutes
 const RUN_HISTORY_CAP = 50;
+const HINT_COST_CR = 50;
 
 /** Distance → tier letter — mirrors lib/utils.ts scoreFromDistance
  *  thresholds. Duplicated to keep the store free of UI-tier coupling
@@ -384,14 +388,31 @@ export const useGameStore = create<GameStore>()(
           return { missionsInMatch: list, pinEnergy: newEnergy };
         }),
 
-      useHint: () =>
+      useHint: () => {
+        const state = get();
+        const cur = state.missionsInMatch[state.currentMissionIndex];
+        if (!cur) return false;
+        // Already revealed every clue? Nothing to do.
+        if (cur.hintsUsed >= cur.location.clues.length - 1) return false;
+
+        // TEST_MODE — clue free of charge. Real mode — deduct 50CR.
+        const testMode = useSettingsStore.getState().testMode;
+        if (!testMode) {
+          if (state.player.credits < HINT_COST_CR) return false;
+          set((s) => ({
+            player: { ...s.player, credits: s.player.credits - HINT_COST_CR },
+          }));
+        }
+
         set((s) => {
           const list = [...s.missionsInMatch];
-          const cur = list[s.currentMissionIndex];
-          if (!cur) return s;
-          list[s.currentMissionIndex] = { ...cur, hintsUsed: cur.hintsUsed + 1 };
+          const m = list[s.currentMissionIndex];
+          if (!m) return s;
+          list[s.currentMissionIndex] = { ...m, hintsUsed: m.hintsUsed + 1 };
           return { missionsInMatch: list };
-        }),
+        });
+        return true;
+      },
 
       extendTime: (seconds) =>
         set((s) => {
