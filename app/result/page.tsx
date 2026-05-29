@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import HudCard from '@/components/ui/HudCard';
@@ -15,6 +15,11 @@ import { useGameStore } from '@/store/gameStore';
 import { toast } from '@/store/toastStore';
 import { getTribe } from '@/data/tribes';
 import { scoreFromDistance, computeTotalScore, formatDistance } from '@/lib/utils';
+import {
+  rollOpponent,
+  buildOpponentTimeline,
+  opponentFinalScore,
+} from '@/lib/opponent';
 import { playScoreReveal } from '@/lib/sound';
 import type { ScoreBreakdown } from '@/types';
 
@@ -31,6 +36,7 @@ export default function ResultPage() {
   const router = useRouter();
   const missions = useGameStore((s) => s.missionsInMatch);
   const idx = useGameStore((s) => s.currentMissionIndex);
+  const matchId = useGameStore((s) => s.currentMatchId);
   const player = useGameStore((s) => s.player);
   const nextMission = useGameStore((s) => s.nextMission);
   const exitMatch = useGameStore((s) => s.exitMatch);
@@ -105,6 +111,34 @@ export default function ResultPage() {
 
   const runTotal = missions.reduce((sum, m) => sum + (m.score ?? 0), 0);
   const precision = Math.max(0, Math.min(100, 100 - (dist / 1000) * 100));
+
+  /** Roll the same opponent that /play used (matchId-seeded), and
+   *  compute their final score from the full timeline. Deterministic
+   *  so the VS panel always shows the same rival on the same match
+   *  even if the player navigates away and returns. */
+  const opponent = useMemo(
+    () => rollOpponent(matchId ?? 'preview'),
+    [matchId],
+  );
+  const opponentTotal = useMemo(() => {
+    const timeline = buildOpponentTimeline(
+      opponent,
+      matchId ?? 'preview',
+      cur.duration ?? 180,
+    );
+    return opponentFinalScore(timeline);
+  }, [opponent, matchId, cur.duration]);
+
+  /** Outcome — VICTORY if the player's running run total ≥ opponent's
+   *  final after all bursts; DEFEAT otherwise. DRAW is a corner case
+   *  (exact tie). Compared against runTotal so cumulative wins matter
+   *  more than a single great pin. */
+  const outcome: 'victory' | 'defeat' | 'draw' =
+    runTotal > opponentTotal
+      ? 'victory'
+      : runTotal < opponentTotal
+      ? 'defeat'
+      : 'draw';
 
   const onNext = () => {
     const hasNext = nextMission();
@@ -202,6 +236,18 @@ export default function ResultPage() {
           </div>
           <Pill variant="cyan">RUN TOTAL // {runTotal.toLocaleString()}</Pill>
         </HudCard>
+
+        {/* ─── VS PANEL — multiplayer outcome comparison ─── */}
+        <VsPanel
+          playerName={player.nickname.toUpperCase().replace(/ /g, '_')}
+          playerTribeEmoji={tribe.emoji}
+          playerScore={runTotal}
+          opponentName={opponent.name}
+          opponentTribeEmoji={opponent.tribeEmoji}
+          opponentSkill={opponent.skill}
+          opponentScore={opponentTotal}
+          outcome={outcome}
+        />
 
         {/* MAIN GRID */}
         <div className="grid lg:grid-cols-[1.5fr_1fr] gap-4 mt-3.5">
@@ -359,6 +405,143 @@ export default function ResultPage() {
         />
       </div>
     </main>
+  );
+}
+
+interface VsPanelProps {
+  playerName: string;
+  playerTribeEmoji: string;
+  playerScore: number;
+  opponentName: string;
+  opponentTribeEmoji: string;
+  opponentSkill: 'rookie' | 'pro' | 'elite';
+  opponentScore: number;
+  outcome: 'victory' | 'defeat' | 'draw';
+}
+
+/** YOU vs OPPONENT comparison card. Rendered between the DEBRIEF top
+ *  bar and the main score grid so the outcome banner reads first
+ *  before the player drills into per-pin breakdown. */
+function VsPanel({
+  playerName,
+  playerTribeEmoji,
+  playerScore,
+  opponentName,
+  opponentTribeEmoji,
+  opponentSkill,
+  opponentScore,
+  outcome,
+}: VsPanelProps) {
+  const outcomeMeta = {
+    victory: {
+      label: '▸ VICTORY',
+      color: '#4ade80',
+      tint: 'rgba(74,222,128,0.10)',
+      border: 'rgba(74,222,128,0.55)',
+      glow: 'rgba(74,222,128,0.45)',
+    },
+    defeat: {
+      label: '▸ DEFEAT',
+      color: '#FD1803',
+      tint: 'rgba(253,24,3,0.10)',
+      border: 'rgba(253,24,3,0.55)',
+      glow: 'rgba(253,24,3,0.45)',
+    },
+    draw: {
+      label: '▸ DRAW',
+      color: '#FBBF24',
+      tint: 'rgba(251,191,36,0.10)',
+      border: 'rgba(251,191,36,0.55)',
+      glow: 'rgba(251,191,36,0.45)',
+    },
+  }[outcome];
+
+  // Player share of total — drives the centre split-bar so the relative
+  // margin reads at a glance.
+  const total = playerScore + opponentScore;
+  const playerPct = total > 0 ? (playerScore / total) * 100 : 50;
+
+  return (
+    <div
+      className="mt-3 px-4 py-3 flex flex-col gap-2.5 relative overflow-hidden"
+      style={{
+        background: 'rgba(5,3,10,0.88)',
+        border: `1px solid ${outcomeMeta.border}`,
+        clipPath:
+          'polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)',
+        boxShadow: `0 0 18px ${outcomeMeta.glow}, inset 0 0 26px ${outcomeMeta.tint}`,
+      }}
+    >
+      {/* Outcome banner — first thing the eye lands on */}
+      <div className="flex items-center justify-center">
+        <span
+          className="font-display font-extrabold text-[16px] sm:text-[18px] tracking-widest2"
+          style={{
+            color: outcomeMeta.color,
+            textShadow: `0 0 12px ${outcomeMeta.glow}`,
+          }}
+        >
+          {outcomeMeta.label}
+        </span>
+      </div>
+
+      {/* YOU vs OPPONENT row */}
+      <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center">
+        {/* Player */}
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[20px] leading-none shrink-0">{playerTribeEmoji}</span>
+          <div className="min-w-0">
+            <div className="font-display font-bold text-[11px] text-cyber-cyan tracking-cyber truncate">
+              {playerName}
+            </div>
+            <div className="font-display font-extrabold text-[18px] text-cyber-cyan tabular-nums">
+              {playerScore.toLocaleString()}
+            </div>
+          </div>
+        </div>
+
+        <span className="font-display font-extrabold text-[12px] text-white/40 tracking-widest2">
+          VS
+        </span>
+
+        {/* Opponent */}
+        <div className="flex items-center gap-2 min-w-0 justify-end text-right">
+          <div className="min-w-0">
+            <div className="font-display font-bold text-[11px] text-cyber-red tracking-cyber truncate">
+              {opponentName}
+            </div>
+            <div className="font-display font-extrabold text-[18px] text-cyber-red tabular-nums">
+              {opponentScore.toLocaleString()}
+            </div>
+          </div>
+          <span className="text-[20px] leading-none shrink-0">
+            {opponentTribeEmoji}
+          </span>
+        </div>
+      </div>
+
+      {/* Split bar — proportional share of combined score */}
+      <div
+        className="relative w-full h-1.5 overflow-hidden"
+        style={{ background: 'rgba(255,255,255,0.06)' }}
+      >
+        <div
+          className="absolute left-0 top-0 bottom-0"
+          style={{
+            width: `${playerPct}%`,
+            background: 'linear-gradient(90deg, #22D3EE, #A78BFA)',
+            boxShadow: '0 0 10px rgba(34,211,238,0.6)',
+          }}
+        />
+      </div>
+
+      <div className="flex items-center justify-between font-mono text-[9px] text-white/45 tracking-cyber">
+        <span>YOUR SHARE · {playerPct.toFixed(0)}%</span>
+        <span className="text-cyber-red/65">
+          OPP_TIER · {opponentSkill.toUpperCase()}
+        </span>
+      </div>
+    </div>
   );
 }
 

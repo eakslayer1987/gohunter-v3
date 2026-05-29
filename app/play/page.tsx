@@ -30,21 +30,14 @@ const GameMap = dynamic(() => import('@/components/game/GameMap'), {
   ),
 });
 
-// Fake opponent for multiplayer-style HUD ambience — replace with real
-// player feed when the BE catches up. Stable values + a slow score
-// drift so the HUD reads "live".
-const OPPONENT_NAME = 'NeonHunter88';
-const OPPONENT_BASE_SCORE = 6000;
-
-// Static seed for LIVE_FEED — cycles 3 events to give the sidebar a
-// sense of activity without needing a real BE feed.
-const FEED_EVENTS: Array<{ name: string; verb: string; value: string }> = [
-  { name: 'NeonHunter88', verb: 'locked', value: '+940' },
-  { name: 'CoinSamurai', verb: 'locked', value: '+720' },
-  { name: 'BangkokRiver', verb: 'deployed', value: 'CLASSIC_GRID' },
-  { name: 'SiamGhost', verb: 'locked', value: '+1,120' },
-  { name: 'GoldenTuk', verb: 'aborted', value: 'NIGHT_HUNT' },
-];
+import {
+  rollOpponent,
+  buildOpponentTimeline,
+  opponentScoreAt,
+  opponentFinalScore,
+  recentOpponentEvents,
+  type OpponentEvent,
+} from '@/lib/opponent';
 
 export default function PlayPage() {
   const router = useRouter();
@@ -71,7 +64,15 @@ export default function PlayPage() {
   const [startedAt] = useState(() => Date.now());
   const [now, setNow] = useState(Date.now());
   const [skillFlash, setSkillFlash] = useState(false);
-  const [feedIdx, setFeedIdx] = useState(0);
+
+  /** Roll a deterministic opponent for this match. The matchId seed
+   *  means refresh keeps the same fight; null matchId (pre-deploy)
+   *  falls back to a placeholder so the HUD doesn't flicker. */
+  const opponent = useMemo(() => rollOpponent(matchId ?? 'preview'), [matchId]);
+  const opponentTimeline = useMemo(
+    () => buildOpponentTimeline(opponent, matchId ?? 'preview', cur?.duration ?? 180),
+    [opponent, matchId, cur?.duration],
+  );
 
   /** Sidebar collapse state — when true, the left HUD panel hides and
    *  the map stretches to the full content width. Persisted to
@@ -147,14 +148,8 @@ export default function PlayPage() {
     return () => clearInterval(id);
   }, [storeHydrated, matchId, cur, router]);
 
-  // LIVE_FEED rotates through fake events every 4s.
-  useEffect(() => {
-    const id = setInterval(
-      () => setFeedIdx((n) => (n + 1) % FEED_EVENTS.length),
-      4000,
-    );
-    return () => clearInterval(id);
-  }, []);
+  // LIVE_FEED auto-updates via the same `now` tick — opponent events
+  // come from the timeline so no separate rotation interval needed.
 
   // Esc collapses the expanded tactical map — matches the modal
   // dismissal pattern used elsewhere (Modal component, TopBar menu).
@@ -189,9 +184,17 @@ export default function PlayPage() {
     () => missions.reduce((sum, m) => sum + (m.score ?? 0), 0),
     [missions],
   );
-  // Opponent slowly drifts up by a few points per tick — pure flavour.
-  const opponentScore =
-    OPPONENT_BASE_SCORE + Math.floor((now - startedAt) / 1000) * 3;
+  // Opponent score = cumulative deltas from the timeline up to now.
+  // Reads as believable bursts in the HUD instead of a linear drift.
+  const elapsedSec = Math.floor((now - startedAt) / 1000);
+  const opponentScore = useMemo(
+    () => opponentScoreAt(opponentTimeline, elapsedSec),
+    [opponentTimeline, elapsedSec],
+  );
+  const liveFeed: OpponentEvent[] = useMemo(
+    () => recentOpponentEvents(opponentTimeline, elapsedSec, 4),
+    [opponentTimeline, elapsedSec],
+  );
 
   // While the persisted match state is still rehydrating, render a
   // simple loader instead of redirecting. Once hydration finishes
@@ -421,21 +424,34 @@ export default function PlayPage() {
               </div>
             </button>
 
-            {/* LIVE_FEED */}
+            {/* LIVE_FEED — pulls from the opponent timeline so the
+                player sees their rival's actions in real time. Empty
+                state shows opponent name as the only live entry. */}
             <div className="hud g p-3">
-              <div className="dl mb-2 text-cyber-gold/70">// LIVE_FEED</div>
-              <ul className="flex flex-col gap-1 font-mono text-[10px]">
-                {[0, 1, 2].map((offset) => {
-                  const ev = FEED_EVENTS[(feedIdx + offset) % FEED_EVENTS.length];
-                  return (
-                    <li key={offset} className="flex items-center gap-1.5">
+              <div className="flex items-center mb-2">
+                <span className="dl text-cyber-gold/70">// LIVE_FEED</span>
+                <span className="flex-1" />
+                <span className="font-mono text-[8px] text-white/40 tracking-cyber">
+                  vs {opponent.tribeEmoji} {opponent.skill.toUpperCase()}
+                </span>
+              </div>
+              <ul className="flex flex-col gap-1 font-mono text-[10px] min-h-[60px]">
+                {liveFeed.length === 0 ? (
+                  <li className="flex items-center gap-1.5 text-white/40">
+                    <span className="text-cyber-gold/70">▸</span>
+                    {opponent.name} preparing...
+                  </li>
+                ) : (
+                  liveFeed.map((ev, i) => (
+                    <li key={i} className="flex items-center gap-1.5">
                       <span className="text-cyber-gold/70">▸</span>
-                      <span className="text-cyber-cyan">{ev.name}</span>
-                      <span className="text-white/55">{ev.verb}</span>
-                      <span className="text-cyber-gold">{ev.value}</span>
+                      <span className="text-white/85 flex-1 truncate">{ev.text}</span>
+                      <span className="text-white/35 text-[8px] tabular-nums">
+                        {ev.at}s
+                      </span>
                     </li>
-                  );
-                })}
+                  ))
+                )}
                 <li className="flex items-center gap-1.5 mt-1 pt-1 border-t border-white/10">
                   <span className="w-1.5 h-1.5 bg-cyber-green rounded-full animate-pulse-dot" />
                   <span className="text-cyber-green text-[9px]">
@@ -530,11 +546,13 @@ export default function PlayPage() {
               accent="cyan"
             />
 
-            {/* OPPONENT SCORE BADGE — top-right */}
+            {/* OPPONENT SCORE BADGE — top-right. Uses the rolled
+                opponent's name + tribe so the player sees a different
+                rival each match. */}
             <PlayerScoreBadge
               side="right"
-              tribeEmoji="🦈"
-              name={OPPONENT_NAME}
+              tribeEmoji={opponent.tribeEmoji}
+              name={opponent.name}
               score={opponentScore}
               accent="red"
             />
