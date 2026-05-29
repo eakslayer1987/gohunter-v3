@@ -119,7 +119,25 @@ export default function GameMap() {
     });
 
     mapRef.current = map;
+
+    // ResizeObserver — MapLibre doesn't notice container size changes
+    // by default (e.g. when /play toggles the minimap between 240 px
+    // and full-overlay). Watch the container and call map.resize()
+    // on every box change so the canvas stays in sync.
+    let resizeObs: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
+      resizeObs = new ResizeObserver(() => {
+        // Defer one frame so the new size is applied before MapLibre
+        // reads it back — otherwise the resize lags one tick behind.
+        requestAnimationFrame(() => {
+          map.resize();
+        });
+      });
+      resizeObs.observe(containerRef.current);
+    }
+
     return () => {
+      resizeObs?.disconnect();
       map.remove();
       mapRef.current = null;
       markerRef.current = null;

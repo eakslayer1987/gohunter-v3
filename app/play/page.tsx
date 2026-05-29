@@ -73,6 +73,12 @@ export default function PlayPage() {
    *  the map stretches to the full content width. Persisted to
    *  localStorage so it survives navigation. */
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  /** Tactical map expand state. Collapsed = corner minimap (240×150);
+   *  expanded = overlay covering most of the screen so the player can
+   *  precisely place / drag a pin. Not persisted — re-collapses on
+   *  page navigation. */
+  const [mapExpanded, setMapExpanded] = useState(false);
   useEffect(() => {
     try {
       const v = window.localStorage.getItem('coin-hunter.play.sidebarCollapsed');
@@ -113,6 +119,17 @@ export default function PlayPage() {
     );
     return () => clearInterval(id);
   }, []);
+
+  // Esc collapses the expanded tactical map — matches the modal
+  // dismissal pattern used elsewhere (Modal component, TopBar menu).
+  useEffect(() => {
+    if (!mapExpanded) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMapExpanded(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [mapExpanded]);
 
   const totalSeconds = cur?.duration ?? 180;
   const elapsed = Math.floor((now - startedAt) / 1000);
@@ -439,15 +456,17 @@ export default function PlayPage() {
               <ToolButton label="⚑" title="Drop marker (stub)" onClick={() => toast.info('▸ MARKER // RESERVED')} />
             </div>
 
-            {/* TACTICAL_MAP minimap — bottom-right (lg+; hidden on mobile
-                because the sticky LOCK bar handles fire there) */}
-            <div className="hidden lg:flex absolute bottom-3 right-3 z-[6] flex-col">
-              <TacticalMapCard
-                onGuess={onSubmit}
-                hasPin={!!cur.pinPosition}
-                pinCoords={cur.pinPosition}
-              />
-            </div>
+            {/* TACTICAL_MAP minimap. Collapsed = corner inset.
+                Expanded = full-screen overlay with backdrop.
+                Hidden on mobile (sticky LOCK bar handles fire there). */}
+            <TacticalMapCard
+              onGuess={onSubmit}
+              hasPin={!!cur.pinPosition}
+              pinCoords={cur.pinPosition}
+              expanded={mapExpanded}
+              onExpand={() => setMapExpanded(true)}
+              onCollapse={() => setMapExpanded(false)}
+            />
           </div>
         </div>
       </div>
@@ -560,15 +579,150 @@ interface TacticalMapProps {
   onGuess: () => void;
   hasPin: boolean;
   pinCoords?: { lat: number; lng: number };
+  expanded: boolean;
+  onExpand: () => void;
+  onCollapse: () => void;
 }
 
-function TacticalMapCard({ onGuess, hasPin, pinCoords }: TacticalMapProps) {
-  // Slimmed minimap — 300 → 240 width, 180 → 150 height. Keeps the
-  // tactical inset useful for pin placement without occluding the
-  // primary map below it.
+/** TacticalMapCard — two modes:
+ *
+ *  COLLAPSED — slim 240×150 inset at the lower-right corner of the
+ *    /play stage. Click the header or hit the expand icon to grow.
+ *
+ *  EXPANDED — full-overlay above the street view with a dark backdrop,
+ *    Esc / X / backdrop-click dismiss, large GUESS button. Designed so
+ *    the player can place a pin precisely without squinting.
+ *
+ *  The single underlying <GameMap /> instance is wrapped in
+ *  ResizeObserver inside the GameMap component so MapLibre's canvas
+ *  reflows automatically on every box change. */
+function TacticalMapCard({
+  onGuess,
+  hasPin,
+  pinCoords,
+  expanded,
+  onExpand,
+  onCollapse,
+}: TacticalMapProps) {
+  const coordsLabel = pinCoords
+    ? `${pinCoords.lat.toFixed(2)}°N · ${pinCoords.lng.toFixed(2)}°E`
+    : '13.74°N · 100.56°E';
+
+  if (expanded) {
+    // OVERLAY MODE — covers most of the play stage. Backdrop catches
+    // clicks outside the panel for one-tap dismiss.
+    return (
+      <>
+        <div
+          aria-hidden
+          onClick={onCollapse}
+          className="absolute inset-0 z-[15] backdrop-blur-sm"
+          style={{ background: 'rgba(5,3,10,0.78)' }}
+        />
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Tactical map"
+          className="absolute z-[16] flex flex-col"
+          style={{
+            top: '5%',
+            left: '5%',
+            right: '5%',
+            bottom: '5%',
+            background: 'rgba(5,3,10,0.96)',
+            border: '1px solid rgba(34,211,238,0.7)',
+            clipPath:
+              'polygon(14px 0, calc(100% - 14px) 0, 100% 14px, 100% calc(100% - 14px), calc(100% - 14px) 100%, 14px 100%, 0 calc(100% - 14px), 0 14px)',
+            boxShadow:
+              '0 0 36px rgba(34,211,238,0.45), 0 0 80px rgba(167,139,250,0.25)',
+          }}
+        >
+          {/* Header — title + coords + close */}
+          <div className="flex items-center px-4 py-2.5 border-b border-cyber-cyan/30 shrink-0">
+            <span className="font-mono text-[11px] text-cyber-cyan tracking-widest2 flex items-center">
+              <span className="inline-block w-1.5 h-1.5 bg-cyber-cyan rounded-full mr-2 animate-pulse-dot" />
+              TACTICAL_MAP // EXPANDED
+            </span>
+            <span className="flex-1" />
+            <span className="font-mono text-[10px] text-white/65 tabular-nums mr-3 hidden sm:inline">
+              {coordsLabel}
+            </span>
+            <button
+              type="button"
+              onClick={onCollapse}
+              title="Close (Esc)"
+              aria-label="Close map"
+              className="w-7 h-7 flex items-center justify-center text-cyber-cyan hover:bg-cyber-cyan/15 transition"
+              style={{
+                background: 'rgba(34,211,238,0.05)',
+                border: '1px solid rgba(34,211,238,0.4)',
+                clipPath: 'polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%)',
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="6" y1="6" x2="18" y2="18" />
+                <line x1="18" y1="6" x2="6" y2="18" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Map canvas — flex-1 so it grabs all remaining vertical space */}
+          <div className="relative flex-1 min-h-0">
+            <GameMap />
+            {/* Instruction overlay — shown until the player drops a pin
+                so they know what to do. Auto-clears once hasPin. */}
+            {!hasPin && (
+              <div
+                className="absolute top-3 left-1/2 -translate-x-1/2 px-4 py-2 font-mono text-[11px] text-cyber-cyan tracking-widest2 pointer-events-none"
+                style={{
+                  background: 'rgba(5,3,10,0.85)',
+                  border: '1px solid rgba(34,211,238,0.45)',
+                  clipPath:
+                    'polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%)',
+                  boxShadow: '0 0 14px rgba(34,211,238,0.3)',
+                }}
+              >
+                ▸ CLICK ON THE MAP TO DROP A PIN
+              </div>
+            )}
+          </div>
+
+          {/* Footer — status + GUESS button (big in this mode) */}
+          <div className="flex items-center gap-3 px-4 py-2.5 border-t border-cyber-cyan/30 shrink-0">
+            <span className="font-mono text-[11px] text-white/65 tabular-nums sm:hidden">
+              {coordsLabel}
+            </span>
+            <span
+              className="font-mono text-[11px] tracking-widest2"
+              style={{
+                color: hasPin ? 'var(--cy-green)' : 'rgba(255,255,255,0.5)',
+              }}
+            >
+              ▸ {hasPin ? 'PIN_LOCKED · READY_TO_FIRE' : 'CLICK MAP TO PLACE PIN'}
+            </span>
+            <span className="flex-1" />
+            <button
+              type="button"
+              onClick={() => {
+                onCollapse();
+                onGuess();
+              }}
+              disabled={!hasPin}
+              className="btn-red !py-2.5 !px-6 !text-[13px] disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              ▸ LOCK_TARGET // FIRE
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // COLLAPSED MODE — corner inset. Hidden on mobile because the sticky
+  // bottom LOCK bar handles guessing there.
   return (
     <div
-      className="flex flex-col"
+      className="hidden lg:flex absolute bottom-3 right-3 z-[6] flex-col"
       style={{
         width: 240,
         background: 'rgba(5,3,10,0.92)',
@@ -579,21 +733,36 @@ function TacticalMapCard({ onGuess, hasPin, pinCoords }: TacticalMapProps) {
         backdropFilter: 'blur(8px)',
       }}
     >
-      <div className="flex items-center px-2.5 py-1 border-b border-cyber-cyan/20">
+      {/* Header doubles as the expand affordance — clicking it opens
+          the overlay. Cursor changes to indicate it's interactive. */}
+      <button
+        type="button"
+        onClick={onExpand}
+        title="Expand map for precision pin placement"
+        className="flex items-center px-2.5 py-1.5 border-b border-cyber-cyan/20 cursor-pointer hover:bg-cyber-cyan/5 transition text-left"
+        style={{ background: 'transparent', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
+      >
         <span className="font-mono text-[9px] text-cyber-cyan tracking-widest2">
           <span className="inline-block w-1.5 h-1.5 bg-cyber-cyan rounded-full mr-1.5 align-middle animate-pulse-dot" />
           TACTICAL_MAP
         </span>
         <span className="flex-1" />
-        <span className="font-mono text-[8px] text-white/55 tabular-nums">
-          {pinCoords
-            ? `${pinCoords.lat.toFixed(2)}°N · ${pinCoords.lng.toFixed(2)}°E`
-            : '13.74°N · 100.56°E'}
+        <span className="font-mono text-[8px] text-white/55 tabular-nums mr-1.5">
+          {coordsLabel}
         </span>
-      </div>
+        {/* Expand glyph — diagonal arrows */}
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-cyber-cyan" aria-hidden>
+          <polyline points="15 3 21 3 21 9" />
+          <polyline points="9 21 3 21 3 15" />
+          <line x1="21" y1="3" x2="14" y2="10" />
+          <line x1="3" y1="21" x2="10" y2="14" />
+        </svg>
+      </button>
+
       <div className="relative h-[150px]">
         <GameMap />
       </div>
+
       <div className="flex items-stretch px-2 py-1.5 gap-2 border-t border-cyber-cyan/20">
         <span className="font-mono text-[9px] text-white/45 self-center flex-1">
           ▸ {hasPin ? 'PIN_LOCKED' : 'CLICK TO PIN'}
