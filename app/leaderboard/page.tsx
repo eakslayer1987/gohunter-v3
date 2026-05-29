@@ -76,12 +76,13 @@ export default function LeaderboardPage() {
         })}
       </div>
 
-      <div className="hud g px-4 py-5">
+      <div className="hud g px-4 py-5 overflow-x-auto">
         {/* Header row */}
         <div
           className="grid gap-3 pb-2.5 font-mono text-[9px] text-white/50 tracking-cyber"
           style={{
-            gridTemplateColumns: '50px 1fr 80px 90px 70px 70px',
+            gridTemplateColumns: '40px 1fr 70px 80px 60px 60px',
+            minWidth: '420px',
             borderBottom: '1px solid rgba(251,191,36,0.3)',
           }}
         >
@@ -114,7 +115,8 @@ export default function LeaderboardPage() {
               key={`${r.rank}-${r.name}`}
               className="grid gap-3 py-2.5 items-center"
               style={{
-                gridTemplateColumns: '50px 1fr 80px 90px 70px 70px',
+                gridTemplateColumns: '40px 1fr 70px 80px 60px 60px',
+            minWidth: '420px',
                 background: r.isMe ? 'rgba(34,211,238,0.08)' : 'transparent',
                 borderLeft: r.isMe ? '2px solid #22D3EE' : '2px solid transparent',
                 paddingLeft: r.isMe ? 8 : 10,

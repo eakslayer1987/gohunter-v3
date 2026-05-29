@@ -64,13 +64,11 @@ export default function MobileLobby({ onOpenIntel }: Props) {
   };
 
   return (
-    <div
-      className="flex flex-col gap-2"
-      style={{
-        minHeight:
-          'calc(100dvh - 76px - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
-      }}
-    >
+    // No fixed/dvh height — the page is short by design + scrolls if
+    // the device is small. Letting the natural content height drive
+    // layout means the avatar stage's pixel height is stable when the
+    // URL bar collapses/expands on mobile Safari.
+    <div className="flex flex-col gap-2 pb-4">
       {/* ─── STAT STRIP ─── */}
       <div className="flex items-stretch gap-1" style={{ minHeight: 40 }}>
         <StatChip icon="🎖" label="LV" value={String(player.level).padStart(2, '0')} accent="#22D3EE" />
@@ -79,12 +77,16 @@ export default function MobileLobby({ onOpenIntel }: Props) {
         <StatChip icon="💎" label="GEM" value={fmtCompact(player.credits)} accent="#FD7A6F" />
       </div>
 
-      {/* ─── AVATAR STAGE ─── Fixed-aspect container with the avatar
-          absolutely positioned + pedestal anchored at the bottom. Halo
-          radial gradient sits behind everything in this container so
-          it never extends past the stage's box and overflows the
-          viewport (which was making the layout feel "tilted"). */}
-      <div className="relative flex-1 min-h-[200px] overflow-hidden">
+      {/* ─── AVATAR STAGE ─── Fixed pixel height so the silhouette
+          doesn't rubber-band when the mobile URL bar collapses /
+          expands (dvh changes → flex-1 % heights twitch on scroll,
+          which the user perceived as the avatar shrinking and growing).
+          Picked 280 px as a baseline that fits iPhone SE through
+          Pro Max comfortably. */}
+      <div
+        className="relative overflow-hidden"
+        style={{ height: 280, flexShrink: 0 }}
+      >
         {/* Halo backdrop — bound to the stage, not the page */}
         <div
           aria-hidden
@@ -95,16 +97,16 @@ export default function MobileLobby({ onOpenIntel }: Props) {
           }}
         />
 
-        {/* Avatar — bottom-centered with a fixed clamp so on phones tall
-            and short alike the silhouette sits in the same spot
-            relative to the pedestal. */}
-        <div className="absolute inset-0 flex items-end justify-center pb-[14%]">
+        {/* Avatar — fixed 240 px height, no float animation on mobile
+            (the Y translate combined with dvh changes was the source
+            of the "shrink/grow" perception). */}
+        <div className="absolute inset-0 flex items-end justify-center pb-[36px]">
           <img
             src="/assets/img/agent-avatar.png"
             alt="Agent avatar"
-            className="animate-hover-float object-contain"
+            className="object-contain"
             style={{
-              height: 'min(64%, 280px)',
+              height: 240,
               maxWidth: '70%',
               filter: 'drop-shadow(0 0 22px rgba(167,139,250,0.55))',
             }}
@@ -114,15 +116,14 @@ export default function MobileLobby({ onOpenIntel }: Props) {
           />
         </div>
 
-        {/* Pedestal — anchored below the avatar's feet (pb-[14%] above
-            keeps the silhouette above the pedestal). Width scales with
-            container so it always reads as a disc, not an ellipse. */}
+        {/* Pedestal — pixel-anchored below the avatar's feet, fixed
+            width so it stays a proper disc regardless of stage width. */}
         <div
           aria-hidden
           className="absolute left-1/2 -translate-x-1/2 pointer-events-none animate-pedestal-pulse"
           style={{
-            bottom: '9%',
-            width: 'min(56%, 220px)',
+            bottom: 22,
+            width: 200,
             height: 22,
             borderRadius: '50%',
             border: '1.5px solid rgba(168,60,255,0.65)',
