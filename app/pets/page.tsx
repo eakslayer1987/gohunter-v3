@@ -107,12 +107,15 @@ export default function PetsPage() {
     toast.success('▸ FED // -10 CR · +8⚡ +20XP');
   };
 
-  const onSendChat = async () => {
-    const text = chatInput.trim();
+  /** Send an arbitrary message — used by both the text input (via
+   *  onSendChat) and the quick-reply chips. Clears the input only when
+   *  the message originated there. */
+  const sendMessage = async (raw: string, fromInput = false) => {
+    const text = raw.trim();
     if (!text || chatApi.loading) return;
     const time = nowHHmm();
     setHistory((h) => [...h, { who: 'me', text, time }]);
-    setChatInput('');
+    if (fromInput) setChatInput('');
     try {
       const res = await chatApi.run({
         petId: pet.id,
@@ -124,6 +127,8 @@ export default function PetsPage() {
       toast.error('▸ CHAT_OFFLINE // ลองอีกครั้ง');
     }
   };
+
+  const onSendChat = () => sendMessage(chatInput, true);
 
   return (
     <ScreenShell
@@ -454,26 +459,93 @@ export default function PetsPage() {
               </div>
             </div>
 
-            {/* Welcome bubble */}
-            <ChatBubble line={{ who: 'pet', text: pet.msg, time: '23:08' }} color={ec} />
-
-            {/* Chat history */}
-            {history.map((line, i) => (
-              <ChatBubble key={i} line={line} color={ec} />
-            ))}
+            {/* EXP footnote — design shows "Sn 150 EXP · STAGE" trailing the
+                digivolution track on the right. Placeholder pending real
+                EXP wire-up. */}
+            <div className="flex justify-end font-mono text-[9px] text-white/40 tracking-wider -mt-1 mb-3">
+              Sn 150 EXP · {pet.stage}
+            </div>
 
             {/* Action bar */}
-            <div className="flex gap-2 flex-wrap mt-3">
+            <div className="flex gap-2 flex-wrap">
               <PetActionBtn color="#FBBF24" icon="🍖" label="FEED" onClick={onFeed} />
               <PetActionBtn color="#FF35E6" icon="✨" label="SKILL" onClick={() => toast.info('▸ SKILL_BOOK // RESERVED')} />
               <PetActionBtn color="#FD1803" icon="⚔️" label="BATTLE" onClick={() => toast.info('▸ BATTLE_QUEUE // RESERVED')} />
-              <PetActionBtn color="#22D3EE" icon="🔮" label="หัวมัย?" onClick={() => toast.info('▸ TIP: ' + pet.msg.slice(0, 30))} />
               <PetActionBtn color="#A78BFA" icon="🪙" label="เหรียญฉัน" onClick={() => toast.info(`▸ WALLET // ${credits} CR`)} />
+            </div>
+          </div>
+
+          {/* AI_CHAT panel — separate HUD card per design ref. Holds the
+              pet header (NEURAL_LINK status + AI_CHAT badge), the welcome
+              bubble + chat history, quick-reply suggestion chips, and the
+              text input. */}
+          <div className="hud relative p-4">
+            {/* Header */}
+            <div className="flex items-center gap-2.5 mb-3">
+              <div
+                className="w-10 h-10 flex items-center justify-center shrink-0"
+                style={{ filter: `drop-shadow(0 0 6px ${ec})` }}
+              >
+                <img src={pet.image} alt="" className="w-full h-full object-contain" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-display font-extrabold text-[15px] text-white tracking-wider truncate">
+                  {pet.nick}
+                </div>
+                <div className="flex items-center gap-2.5 mt-0.5 font-mono text-[9px] text-white/55 flex-wrap">
+                  <span className="text-cyber-green inline-flex items-center gap-1 tracking-widest2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyber-green animate-pulse-dot" />
+                    NEURAL_LINK
+                  </span>
+                  <span className="text-white/25">·</span>
+                  <span className="text-cyber-cyan tracking-widest2">ONLINE</span>
+                </div>
+              </div>
+              <span
+                className="font-display font-bold text-[10px] tracking-widest2"
+                style={{ color: ec, textShadow: `0 0 8px ${ec}` }}
+              >
+                AI_CHAT
+              </span>
+            </div>
+
+            {/* Welcome bubble + chat history. Scrollable region so long
+                conversations don't blow out the panel. */}
+            <div className="max-h-[280px] overflow-y-auto pr-1 mb-3">
+              <ChatBubble line={{ who: 'pet', text: pet.msg, time: '23:08' }} color={ec} />
+              {history.map((line, i) => (
+                <ChatBubble key={i} line={line} color={ec} />
+              ))}
+            </div>
+
+            {/* Quick-reply suggestion chips. Clicking sends the chip text
+                straight to chat — no need to type. Disabled during a
+                pending API call so users don't spam-fire. */}
+            <div className="flex gap-2 flex-wrap mb-3">
+              {QUICK_REPLIES.map((q) => (
+                <button
+                  key={q.text}
+                  type="button"
+                  disabled={chatApi.loading}
+                  onClick={() => sendMessage(q.text)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 font-sans text-[12px] cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    background: `${ec}10`,
+                    border: `1px solid ${ec}44`,
+                    color: '#fff',
+                    clipPath:
+                      'polygon(6px 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0 50%)',
+                  }}
+                >
+                  <span>{q.text}</span>
+                  <span className="text-[14px] leading-none">{q.emoji}</span>
+                </button>
+              ))}
             </div>
 
             {/* Chat input */}
             <div
-              className="flex gap-2 items-center mt-3 px-3.5 py-2.5"
+              className="flex gap-2 items-center px-3.5 py-2.5"
               style={{
                 background: 'rgba(255,255,255,0.03)',
                 border: '1px solid rgba(34,211,238,0.25)',
@@ -487,7 +559,7 @@ export default function PetsPage() {
                 }}
                 placeholder={`คุยกับ ${pet.nick.toLowerCase()}…`}
                 disabled={chatApi.loading}
-                className="flex-1 bg-transparent border-0 outline-0 font-sans text-[13px] text-white"
+                className="flex-1 bg-transparent border-0 outline-0 font-sans text-[13px] text-white placeholder-white/40"
               />
               <button
                 onClick={onSendChat}
@@ -512,6 +584,16 @@ export default function PetsPage() {
     </ScreenShell>
   );
 }
+
+/** Pre-canned chat openers shown as chips above the input. emoji is
+ *  rendered after the label so the text reads "ทักทาย 👋" matching the
+ *  design-system mockup. */
+const QUICK_REPLIES: Array<{ text: string; emoji: string }> = [
+  { text: 'ทักทาย',         emoji: '👋' },
+  { text: 'เบาะแสหน่อย',    emoji: '🔍' },
+  { text: 'ให้กำลังใจที',   emoji: '💪' },
+  { text: 'เล่าเรื่องตลก',  emoji: '😂' },
+];
 
 // ─────────────────────────────────────────────────────────
 function StatLine({
