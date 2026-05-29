@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Pill from '@/components/ui/Pill';
 import { useSoundStore } from '@/store/soundStore';
 import { useAuthStore } from '@/store/authStore';
+import { useGameStore } from '@/store/gameStore';
 import { toast } from '@/store/toastStore';
 import clsx from 'clsx';
 
@@ -42,6 +43,9 @@ export default function TopBar() {
   const toggleSound = useSoundStore((s) => s.toggle);
   const guest = useAuthStore((s) => s.guest);
   const signOut = useAuthStore((s) => s.signOut);
+  const maxStamina = useGameStore((s) => s.player.maxStamina);
+  const addStamina = useGameStore((s) => s.addStamina);
+  const addCredits = useGameStore((s) => s.addCredits);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -73,6 +77,16 @@ export default function TopBar() {
     setMenuOpen(false);
     toast.info('▸ SESSION_ENDED');
     router.push('/login');
+  };
+
+  /** Top up stamina + credits — same effect as the dashed-violet
+   *  button on /profile, surfaced here so the user doesn't have to
+   *  navigate to top up when stamina runs out mid-flow. */
+  const onDevRefill = () => {
+    addStamina(maxStamina);
+    addCredits(2000);
+    setMenuOpen(false);
+    toast.success(`▸ DEV_REFILL // +${maxStamina}⚡ +2000CR`);
   };
 
   return (
@@ -209,6 +223,23 @@ export default function TopBar() {
                   ▸ {item.label}
                 </Link>
               ))}
+              {/* DEV_REFILL — quick stamina + CR top-up so the user
+                  isn't blocked from deploying contracts when their
+                  energy runs low. Same handler as /profile's footer
+                  button. */}
+              <button
+                type="button"
+                onClick={onDevRefill}
+                className="w-full text-left px-3.5 py-2 font-display text-[11px] tracking-cyber text-cyber-gold hover:bg-cyber-gold/10 transition"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                ⚡ DEV_REFILL // +{maxStamina}⚡ +2000CR
+              </button>
+
               <div
                 className="h-px mx-3.5 my-1"
                 style={{ background: 'rgba(255,255,255,0.08)' }}
