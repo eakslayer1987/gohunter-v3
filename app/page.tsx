@@ -7,6 +7,7 @@ import CyberBackdrop from '@/components/ui/CyberBackdrop';
 import Particles from '@/components/ui/Particles';
 import Bar from '@/components/ui/Bar';
 import BevelFrame from '@/components/ui/BevelFrame';
+import Pill from '@/components/ui/Pill';
 import HolyCoinAura from '@/components/lobby/HolyCoinAura';
 import TopBar from '@/components/lobby/TopBar';
 import JellyCompanionPanel from '@/components/lobby/JellyCompanionPanel';
@@ -74,7 +75,7 @@ export default function LobbyPage() {
         <section className="grid lg:grid-cols-[1fr_1.05fr_1.15fr] gap-5 mb-6 items-start">
           {/* LEFT — title + copy + CTAs */}
           <div className="relative">
-            <div className="dl mb-3.5">// PROTOCOL_INIT_001 -- WELCOME, AGENT</div>
+            <div className="dl mb-3.5">// PROTOCOL_INIT_001 -- WELCOME, HUNTER</div>
 
             <h1 className="font-display text-3xl sm:text-4xl lg:text-[48px] xl:text-[52px] font-extrabold leading-[1.05] mb-4 tracking-cyber">
               <span
@@ -146,11 +147,34 @@ export default function LobbyPage() {
             <HolyCoinAura />
           </div>
 
-          {/* RIGHT — Avatar showcase */}
+          {/* RIGHT — Avatar showcase. Top row holds the AGENT name + a
+              compact LV / tribe / streak pill cluster, mirroring the
+              design-system mockup's HUNTER_NYX header. */}
           <BevelFrame accent="cyan" className="px-5 py-4 sm:px-6 sm:py-5">
-            <h2 className="text-center font-display tracking-widest2 text-cyber-cyan text-[13px] sm:text-[15px] font-bold mb-3">
-              AVATAR SHOWCASE
+            <div className="dl text-center mb-1.5">// AVATAR_SHOWCASE</div>
+            <h2
+              className="text-center font-display font-extrabold text-[18px] sm:text-[22px] tracking-widest2 mb-2 truncate"
+              style={{
+                background: 'linear-gradient(90deg, #22D3EE, #A78BFA)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                color: 'transparent',
+                textShadow: '0 0 18px rgba(34,211,238,0.25)',
+              }}
+              title={player.nickname}
+            >
+              {player.nickname}
             </h2>
+            <div className="flex items-center justify-center gap-1.5 mb-3 flex-wrap">
+              <Pill variant="cyan">LV {String(player.level).padStart(2, '0')}</Pill>
+              <Pill variant="violet">
+                <span className="text-[13px] leading-none">{tribe.emoji}</span>
+                {tribe.name}
+              </Pill>
+              {player.streak > 0 && (
+                <Pill variant="red">🔥 {player.streak}</Pill>
+              )}
+            </div>
 
             <div
               className="relative mb-4 overflow-hidden"

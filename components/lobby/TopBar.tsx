@@ -16,9 +16,9 @@ interface NavTab {
 
 const NAV_TABS: NavTab[] = [
   { id: 'dashboard',   label: 'DASHBOARD',   href: '/' },
+  { id: 'pets',        label: 'PETS',        href: '/pets' },
   { id: 'hunters',     label: 'HUNTERS',     href: '/hunters' },
   { id: 'contracts',   label: 'CONTRACTS',   href: '/contracts' },
-  { id: 'market',      label: 'MARKET',      href: '/market' },
   { id: 'leaderboard', label: 'LEADERBOARD', href: '/leaderboard' },
   { id: 'shop',        label: 'SHOP',        href: '/shop' },
 ];
