@@ -79,6 +79,30 @@ export default function ResultPage() {
     }
   }, [storeHydrated, cur, router]);
 
+  /** Roll the same opponent that /play used (matchId-seeded), and
+   *  compute their final score from the full timeline. Deterministic
+   *  so the VS panel always shows the same rival on the same match
+   *  even if the player navigates away and returns.
+   *
+   *  IMPORTANT: these useMemo calls MUST be declared before any
+   *  conditional return below, or React's hook-count check trips and
+   *  the page hard-crashes in production with React error #310
+   *  ("rendered fewer hooks than expected"). cur may be undefined
+   *  during hydration, so guard with optional chaining. */
+  const opponent = useMemo(
+    () => rollOpponent(matchId ?? 'preview'),
+    [matchId],
+  );
+  const curDuration = cur?.duration ?? 180;
+  const opponentTotal = useMemo(() => {
+    const timeline = buildOpponentTimeline(
+      opponent,
+      matchId ?? 'preview',
+      curDuration,
+    );
+    return opponentFinalScore(timeline);
+  }, [opponent, matchId, curDuration]);
+
   if (!storeHydrated) {
     return (
       <main className="cyber-screen min-h-screen flex items-center justify-center">
@@ -111,23 +135,6 @@ export default function ResultPage() {
 
   const runTotal = missions.reduce((sum, m) => sum + (m.score ?? 0), 0);
   const precision = Math.max(0, Math.min(100, 100 - (dist / 1000) * 100));
-
-  /** Roll the same opponent that /play used (matchId-seeded), and
-   *  compute their final score from the full timeline. Deterministic
-   *  so the VS panel always shows the same rival on the same match
-   *  even if the player navigates away and returns. */
-  const opponent = useMemo(
-    () => rollOpponent(matchId ?? 'preview'),
-    [matchId],
-  );
-  const opponentTotal = useMemo(() => {
-    const timeline = buildOpponentTimeline(
-      opponent,
-      matchId ?? 'preview',
-      cur.duration ?? 180,
-    );
-    return opponentFinalScore(timeline);
-  }, [opponent, matchId, cur.duration]);
 
   /** Outcome — only meaningful on the final mission. Comparing
    *  cumulative player score to the opponent's full-match total
