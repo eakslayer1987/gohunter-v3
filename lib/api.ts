@@ -151,10 +151,10 @@ const MOCK: Partial<Record<EndpointKey, MockHandler>> = {
 
   'pets.list': () => ({
     pets: [
-      { id: 'volt',  nick: 'VOLT BABY', name: 'DK09', element: 'FAIRY',   level: 2, stage: 'BABY',     hp: 70,  hpMax: 70,  en: 100, enMax: 120, atk: 7,  sync: 92, link: true,  msg: 'พรืด~ สวัสดี HUNTER! ฉันหิวจัง... ให้อาหารหน่อยน้า 🥺' },
-      { id: 'lumen', nick: 'LUMEN PUP', name: 'DK11', element: 'BEAST',   level: 4, stage: 'ROOKIE',   hp: 95,  hpMax: 95,  en: 140, enMax: 140, atk: 11, sync: 78, link: true,  msg: 'โว้ฟ! พร้อมออกล่าหรือยัง hunter? วันนี้ฉันรู้สึกฟิตเป็นพิเศษ ✨' },
-      { id: 'nyx',   nick: 'NYX OWL',   name: 'DK17', element: 'PSYCHIC', level: 6, stage: 'ROOKIE',   hp: 88,  hpMax: 100, en: 180, enMax: 180, atk: 9,  sync: 64, link: false, msg: 'ฮูก... ฉันมองเห็นบางอย่างในเงามืด... สแกนเรดาร์พร้อมแล้ว 🔮' },
-      { id: 'horn',  nick: 'HORN CUB',  name: 'DK21', element: 'DARK',    level: 7, stage: 'CHAMPION', hp: 60,  hpMax: 110, en: 95,  enMax: 160, atk: 14, sync: 51, link: false, msg: 'ggrr... ต้องการอาหารและพักผ่อน HP เหลือน้อยแล้ว ⚠️' },
+      { id: 'volt',  nick: 'VOLT BABY', name: 'DK09', element: 'FAIRY',   level: 2, stage: 'BABY',     image: '/assets/img/pets/pet-kit.webp',  hp: 70,  hpMax: 70,  en: 100, enMax: 120, atk: 7,  sync: 92, link: true,  msg: 'พรืด~ สวัสดี HUNTER! ฉันหิวจัง... ให้อาหารหน่อยน้า 🥺' },
+      { id: 'lumen', nick: 'LUMEN PUP', name: 'DK11', element: 'BEAST',   level: 4, stage: 'ROOKIE',   image: '/assets/img/pets/pet-pup.webp',  hp: 95,  hpMax: 95,  en: 140, enMax: 140, atk: 11, sync: 78, link: true,  msg: 'โว้ฟ! พร้อมออกล่าหรือยัง hunter? วันนี้ฉันรู้สึกฟิตเป็นพิเศษ ✨' },
+      { id: 'nyx',   nick: 'NYX OWL',   name: 'DK17', element: 'PSYCHIC', level: 6, stage: 'ROOKIE',   image: '/assets/img/pets/pet-owl.webp',  hp: 88,  hpMax: 100, en: 180, enMax: 180, atk: 9,  sync: 64, link: false, msg: 'ฮูก... ฉันมองเห็นบางอย่างในเงามืด... สแกนเรดาร์พร้อมแล้ว 🔮' },
+      { id: 'horn',  nick: 'HORN CUB',  name: 'DK21', element: 'DARK',    level: 7, stage: 'CHAMPION', image: '/assets/img/pets/pet-horn.webp', hp: 60,  hpMax: 110, en: 95,  enMax: 160, atk: 14, sync: 51, link: false, msg: 'ggrr... ต้องการอาหารและพักผ่อน HP เหลือน้อยแล้ว ⚠️' },
     ],
   }),
   'pets.feed': ({ body }) => ({ ok: true, petId: body.petId, hp: 80, en: 110, happiness: 95 }),

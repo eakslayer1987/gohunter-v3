@@ -51,6 +51,7 @@ interface PetCard {
   element: string;
   stage: string;
   level: number;
+  image: string;
   hp: number;
   hpMax: number;
   en: number;
@@ -954,21 +955,20 @@ function StarterStep({
                   ✓ PICKED
                 </div>
               )}
-              <div className="relative h-[100px] flex items-center justify-center">
+              <div className="relative h-[110px] flex items-center justify-center">
                 <div
-                  className="absolute w-[100px] h-[100px] rounded-full"
+                  className="absolute w-[110px] h-[110px] rounded-full"
                   style={{
                     background: `radial-gradient(circle, ${c}33, transparent 70%)`,
                     filter: 'blur(8px)',
                   }}
                 />
-                {/* No pet sprite asset yet — render emoji icon by element. */}
-                <div
-                  className="relative text-[60px] leading-none"
+                <img
+                  src={p.image}
+                  alt={p.nick}
+                  className="relative h-[100px] w-auto object-contain"
                   style={{ filter: `drop-shadow(0 0 14px ${c}aa)` }}
-                >
-                  {p.element === 'FAIRY' ? '🦋' : p.element === 'BEAST' ? '🐺' : p.element === 'PSYCHIC' ? '🦉' : '🦇'}
-                </div>
+                />
               </div>
               <div
                 className="font-display font-extrabold text-[14px] sm:text-[15px] tracking-cyber mt-1.5"
@@ -1102,17 +1102,21 @@ function ConfirmStep({
           sub={petData ? `${petData.element} · ${petData.stage}` : ''}
           title={petData?.nick ?? '—'}
         >
-          <div
-            className="text-[56px] leading-none mx-auto w-fit"
-            style={{ filter: `drop-shadow(0 0 14px ${petColor})` }}
-          >
-            {petData
-              ? petData.element === 'FAIRY' ? '🦋'
-              : petData.element === 'BEAST' ? '🐺'
-              : petData.element === 'PSYCHIC' ? '🦉'
-              : '🦇'
-              : '🐾'}
-          </div>
+          {petData ? (
+            <img
+              src={petData.image}
+              alt={petData.nick}
+              className="mx-auto h-[80px] w-auto object-contain"
+              style={{ filter: `drop-shadow(0 0 14px ${petColor})` }}
+            />
+          ) : (
+            <div
+              className="text-[56px] leading-none mx-auto w-fit"
+              style={{ filter: `drop-shadow(0 0 14px ${petColor})` }}
+            >
+              🐾
+            </div>
+          )}
         </SummaryCard>
       </div>
 

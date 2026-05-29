@@ -17,6 +17,8 @@ interface PetCard {
   element: 'FAIRY' | 'BEAST' | 'PSYCHIC' | 'DARK';
   stage: 'BABY' | 'ROOKIE' | 'CHAMPION' | 'ULTIMATE' | 'MEGA';
   level: number;
+  /** Asset URL — webp portrait shipped at /public/assets/img/pets/. */
+  image: string;
   hp: number;
   hpMax: number;
   en: number;
@@ -34,12 +36,6 @@ const ELEMENT_COLOR: Record<PetCard['element'], string> = {
   BEAST:   '#FBBF24',
   PSYCHIC: '#22D3EE',
   DARK:    '#A78BFA',
-};
-const ELEMENT_EMOJI: Record<PetCard['element'], string> = {
-  FAIRY:   '🦋',
-  BEAST:   '🐺',
-  PSYCHIC: '🦉',
-  DARK:    '🦇',
 };
 const STAGES: PetCard['stage'][] = ['BABY', 'ROOKIE', 'CHAMPION', 'ULTIMATE', 'MEGA'];
 const FEED_COST_CR = 10;
@@ -63,7 +59,7 @@ export default function PetsPage() {
   const addCredits = useGameStore((s) => s.addCredits);
   const ownedFromAuth = useAuthStore((s) => s.starterPetId);
 
-  const { data, loading } = useApi<PetsResp>('pets.list');
+  const { data, loading, refetch } = useApi<PetsResp>('pets.list');
   const chatApi = useAction<ChatResp>('pets.chat');
 
   // Owned pet — prefer the one the user picked at onboarding, otherwise
@@ -135,6 +131,32 @@ export default function PetsPage() {
       title="DIGIVICE_PETS"
       accent="violet"
     >
+      {/* Status strip — LIVE indicator + data source + roster count.
+          REFRESH button on the right re-runs the pets.list mock so
+          users can see the latency + 4% failure rate in action. */}
+      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+        <div className="flex items-center gap-2 font-mono text-[10px] tracking-widest2 text-white/55 flex-wrap">
+          <span className="flex items-center gap-1.5 text-cyber-green">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyber-green animate-pulse-dot" />
+            LIVE
+          </span>
+          <span className="text-white/25">·</span>
+          <span>MOCK_DATA</span>
+          <span className="text-white/25">·</span>
+          <span>{String(pets.length).padStart(2, '0')} COMPANIONS</span>
+        </div>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            refetch();
+            toast.info('▸ REFRESHING_ROSTER...');
+          }}
+          className="!px-3.5 !py-2 !text-[10px]"
+        >
+          ↻ REFRESH
+        </Button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
         {/* ROSTER */}
         <div className="hud p-3.5 h-fit">
@@ -165,12 +187,16 @@ export default function PetsPage() {
                   }}
                 >
                   <div
-                    className="w-12 h-12 flex items-center justify-center text-[32px] shrink-0"
+                    className="w-12 h-12 flex items-center justify-center shrink-0"
                     style={{
                       filter: isOwned ? `drop-shadow(0 0 8px ${c})` : 'none',
                     }}
                   >
-                    {ELEMENT_EMOJI[p.element]}
+                    <img
+                      src={p.image}
+                      alt=""
+                      className="w-full h-full object-contain"
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -297,7 +323,8 @@ export default function PetsPage() {
               {pet.element}
             </div>
 
-            {/* Pet glyph */}
+            {/* Pet portrait — webp from /public/assets/img/pets, animated
+                float matches the design ref. Halo behind is element-colored. */}
             <div className="absolute inset-0 flex items-center justify-center z-[1]">
               <div
                 className="absolute w-[300px] h-[300px] rounded-full"
@@ -306,12 +333,14 @@ export default function PetsPage() {
                   filter: 'blur(14px)',
                 }}
               />
-              <div
-                className="relative animate-hover-float text-[160px] sm:text-[200px] leading-none"
-                style={{ filter: `drop-shadow(0 0 28px ${ec}aa) drop-shadow(0 0 50px ${ec}55)` }}
-              >
-                {ELEMENT_EMOJI[pet.element]}
-              </div>
+              <img
+                src={pet.image}
+                alt={pet.nick}
+                className="relative animate-hover-float w-[220px] sm:w-[280px] h-auto object-contain"
+                style={{
+                  filter: `drop-shadow(0 0 28px ${ec}aa) drop-shadow(0 0 50px ${ec}55)`,
+                }}
+              />
             </div>
 
             {/* Name plate */}
@@ -342,10 +371,10 @@ export default function PetsPage() {
             {/* Header row */}
             <div className="flex items-center gap-2.5 mb-3">
               <div
-                className="w-10 h-10 flex items-center justify-center text-[28px] shrink-0"
+                className="w-10 h-10 flex items-center justify-center shrink-0"
                 style={{ filter: `drop-shadow(0 0 6px ${ec})` }}
               >
-                {ELEMENT_EMOJI[pet.element]}
+                <img src={pet.image} alt="" className="w-full h-full object-contain" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
