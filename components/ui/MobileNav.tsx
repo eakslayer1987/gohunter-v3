@@ -56,10 +56,10 @@ export default function MobileNav() {
   };
 
   const tabs: Tab[] = [
-    { id: 'dashboard',   label: 'HOME',                 href: '/',            icon: <IconHome />,   matchPrefix: '/' },
-    { id: 'contracts',   label: 'HUNT',                 href: '/#contracts',  icon: <IconTarget />, matchPrefix: '/#contracts' },
-    { id: 'play',        label: 'GO',                   onClick: onPlay,      icon: <IconPlay />,   center: true },
-    { id: 'leaderboard', label: 'RANK',                 href: '/#leaderboard', icon: <IconTrophy />, matchPrefix: '/#leaderboard' },
+    { id: 'dashboard',   label: 'HOME',                 href: '/',             icon: <IconHome />,   matchPrefix: '/' },
+    { id: 'contracts',   label: 'HUNT',                 href: '/contracts',    icon: <IconTarget />, matchPrefix: '/contracts' },
+    { id: 'play',        label: 'GO',                   onClick: onPlay,       icon: <IconPlay />,   center: true },
+    { id: 'leaderboard', label: 'RANK',                 href: '/leaderboard',  icon: <IconTrophy />, matchPrefix: '/leaderboard' },
     { id: 'profile',     label: guest ? 'JOIN' : 'ME',  href: guest ? '/login' : '/profile', icon: <IconUser />, matchPrefix: '/profile' },
   ];
 
