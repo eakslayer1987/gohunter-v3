@@ -56,6 +56,15 @@
   --glow-toast:  0 0 24px rgba(0,0,0,0.60), 0 0 12px currentColor;
   --inner-panel: inset 0 0 40px rgba(167,139,250,0.08);
 
+  /* THEME ACCENT — swaps when body gets a .theme-* class. Components
+     that opt into the user's theme accent (TopBar active tab, primary
+     button gradient, focus rings) read these vars instead of a fixed
+     cyan hex. Default falls back to cyan if no class is applied. */
+  --theme-accent:       #22D3EE;
+  --theme-accent-rgb:   34 211 238;
+  --theme-accent-glow:  rgba(34,211,238,0.5);
+  --theme-accent-soft:  rgba(34,211,238,0.18);
+
   /* CLIP-PATH SHAPES */
   --clip-pill:        polygon(7px 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 7px 100%, 0 50%);
   --clip-pill-lg:     polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
@@ -72,6 +81,33 @@ html, body {
   color: var(--fg1);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Per-theme accent overrides. ThemeProvider toggles these classes on
+   the body element based on settingsStore.theme. */
+body.theme-cyan {
+  --theme-accent:       #22D3EE;
+  --theme-accent-rgb:   34 211 238;
+  --theme-accent-glow:  rgba(34,211,238,0.5);
+  --theme-accent-soft:  rgba(34,211,238,0.18);
+}
+body.theme-violet {
+  --theme-accent:       #A78BFA;
+  --theme-accent-rgb:   167 139 250;
+  --theme-accent-glow:  rgba(167,139,250,0.5);
+  --theme-accent-soft:  rgba(167,139,250,0.18);
+}
+body.theme-gold {
+  --theme-accent:       #FBBF24;
+  --theme-accent-rgb:   251 191 36;
+  --theme-accent-glow:  rgba(251,191,36,0.5);
+  --theme-accent-soft:  rgba(251,191,36,0.18);
+}
+body.theme-green {
+  --theme-accent:       #4ade80;
+  --theme-accent-rgb:   74 222 128;
+  --theme-accent-glow:  rgba(74,222,128,0.5);
+  --theme-accent-soft:  rgba(74,222,128,0.18);
 }
 
 body {
@@ -148,12 +184,17 @@ body {
   .btn-cyber {
     @apply text-base font-extrabold px-7 py-3 text-[13px] uppercase cursor-pointer border-none font-display transition-all;
     color: var(--base);
-    background: var(--grad-cta);
+    /* Gradient starts at theme accent, ends at violet so the engine
+       pair character stays consistent across themes. */
+    background: linear-gradient(135deg, var(--theme-accent) 0%, #A78BFA 100%);
     letter-spacing: 0.16em;
     clip-path: var(--clip-btn);
-    box-shadow: var(--glow-cta);
+    box-shadow: 0 0 28px var(--theme-accent-glow), 0 0 56px rgba(167,139,250,0.30);
   }
-  .btn-cyber:hover { transform: translateY(-2px); box-shadow: var(--glow-cta-hi); }
+  .btn-cyber:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 40px var(--theme-accent-glow), 0 0 80px rgba(167,139,250,0.40);
+  }
   .btn-cyber:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
   .btn-ghost {
@@ -215,6 +256,14 @@ body {
     animation: shimmer-bg 2s linear infinite;
     background-size: 200% 100%;
   }
+
+  /* ============ THEME ACCENT UTILITIES ============ */
+  /* Use these where a component should follow the user's theme
+     selection (vs being a fixed cyan/violet brand colour). */
+  .text-accent { color: var(--theme-accent); }
+  .border-accent { border-color: var(--theme-accent); }
+  .bg-accent { background-color: var(--theme-accent); }
+  .glow-accent { box-shadow: 0 0 14px var(--theme-accent-glow); }
 
   /* ============ DATA LINE ============ */
   .dl {

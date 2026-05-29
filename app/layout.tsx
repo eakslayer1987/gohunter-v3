@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import Toaster from '@/components/ui/Toaster';
 import PWAInstaller from '@/components/ui/PWAInstaller';
 import MobileNav from '@/components/ui/MobileNav';
+import ThemeProvider from '@/components/ui/ThemeProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -50,7 +51,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* iOS Safari ignores manifest icons — needs its own touch icon. */}
         <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
       </head>
-      <body className="font-sans">
+      <body className="font-sans theme-cyan">
+        <ThemeProvider />
         {children}
         <Toaster />
         <MobileNav />

@@ -127,12 +127,20 @@ export default function TopBar() {
               key={tab.id}
               href={tab.href}
               className={clsx(
-                'font-display text-[11px] lg:text-[12px] tracking-cyber px-2 lg:px-3 py-1.5 transition whitespace-nowrap no-underline',
+                'font-display text-[11px] lg:text-[12px] tracking-cyber px-2 lg:px-3 py-1.5 transition whitespace-nowrap no-underline border-b-2',
                 active
-                  ? 'text-cyber-cyan font-bold border-b-2 border-cyber-cyan'
-                  : 'text-white/65 hover:text-cyber-cyan border-b-2 border-transparent',
+                  ? 'font-bold'
+                  : 'text-white/65 hover:text-cyber-cyan border-transparent',
               )}
-              style={active ? { textShadow: '0 0 10px #22D3EE' } : undefined}
+              style={
+                active
+                  ? {
+                      color: 'var(--theme-accent)',
+                      borderBottomColor: 'var(--theme-accent)',
+                      textShadow: '0 0 10px var(--theme-accent)',
+                    }
+                  : undefined
+              }
             >
               {tab.label}
             </Link>
