@@ -562,23 +562,56 @@ export default function PlayPage() {
         </div>
       </div>
 
-      {/* Sticky mobile fire bar — same as before */}
+      {/* Sticky mobile fire bar. Mobile users can't see the corner
+          TacticalMap (it's lg+ only) so we add a MAP button that
+          opens the expand-overlay full-screen — that's where they
+          place their pin. Pin status shows "▸ READY" / "▸ NO PIN"
+          inline so they know whether LOCK_TARGET will work. */}
       <div
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center gap-2 px-3 py-2 backdrop-blur-md"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-stretch gap-2 px-2 py-2 backdrop-blur-md"
         style={{
           background: 'rgba(5,3,10,0.92)',
           borderTop: '1px solid rgba(253,24,3,0.45)',
           boxShadow: '0 -8px 24px rgba(0,0,0,0.6)',
+          paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))',
         }}
       >
-        <div className="flex flex-col leading-tight">
+        <div className="flex flex-col leading-tight justify-center">
           <span className="font-mono text-[9px] text-cyber-gold/70 tracking-cyber">▸ TIME</span>
           <span className="font-display text-cyber-gold text-lg font-bold tabular-nums">
             {formatTime(remaining)}
           </span>
         </div>
-        <div className="flex-1" />
-        <Button variant="red" onClick={onSubmit} className="!py-2.5 !px-5 !text-[12px]">
+        <button
+          type="button"
+          onClick={() => setMapExpanded(true)}
+          className="flex flex-col items-center justify-center gap-0.5 px-3 cursor-pointer transition hover:bg-cyber-cyan/15"
+          style={{
+            background: cur.pinPosition
+              ? 'rgba(74,222,128,0.10)'
+              : 'rgba(34,211,238,0.10)',
+            border: `1px solid ${cur.pinPosition ? 'rgba(74,222,128,0.55)' : 'rgba(34,211,238,0.55)'}`,
+            clipPath:
+              'polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px)',
+            color: cur.pinPosition ? 'var(--cy-green)' : 'var(--cy-cyan)',
+          }}
+          aria-label="Open tactical map"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M9 20l-5.5-2.5V4L9 6.5 15 4l6 2.5v13.5L15 17z" />
+            <line x1="9" y1="6.5" x2="9" y2="20" />
+            <line x1="15" y1="4" x2="15" y2="17" />
+          </svg>
+          <span className="font-display font-bold text-[9px] tracking-cyber">
+            {cur.pinPosition ? 'READY' : 'PIN'}
+          </span>
+        </button>
+        <Button
+          variant="red"
+          onClick={onSubmit}
+          disabled={!cur.pinPosition}
+          className="!py-2.5 !px-4 !text-[12px] !flex-1 !flex !items-center !justify-center disabled:!opacity-50"
+        >
           ▸ LOCK_TARGET // FIRE
         </Button>
       </div>
@@ -700,26 +733,29 @@ function TacticalMapCard({
     : '13.74°N · 100.56°E';
 
   if (expanded) {
-    // OVERLAY MODE — covers most of the play stage. Backdrop catches
-    // clicks outside the panel for one-tap dismiss.
+    // OVERLAY MODE — covers most of the play stage on desktop
+    // (absolute, scoped to the parent), or the entire viewport on
+    // mobile (fixed). Mobile users don't have a corner minimap so the
+    // overlay is their only way to place a pin; making it full-screen
+    // means thumbs reach the whole map.
     return (
       <>
         <div
           aria-hidden
           onClick={onCollapse}
-          className="absolute inset-0 z-[15] backdrop-blur-sm"
+          className="fixed lg:absolute inset-0 z-[55] lg:z-[15] backdrop-blur-sm"
           style={{ background: 'rgba(5,3,10,0.78)' }}
         />
         <div
           role="dialog"
           aria-modal="true"
           aria-label="Tactical map"
-          className="absolute z-[16] flex flex-col"
+          className="fixed lg:absolute z-[56] lg:z-[16] flex flex-col"
           style={{
-            top: '5%',
-            left: '5%',
-            right: '5%',
-            bottom: '5%',
+            top: 'env(safe-area-inset-top, 5%)',
+            left: '2%',
+            right: '2%',
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
             background: 'rgba(5,3,10,0.96)',
             border: '1px solid rgba(34,211,238,0.7)',
             clipPath:
