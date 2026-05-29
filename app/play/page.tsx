@@ -20,18 +20,6 @@ import { getPetStageMeta } from '@/data/pets';
 
 const HAS_STREET_VIEW_KEY = !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-/** Hosts that are guaranteed NOT to be on the Google Maps API key's
- *  referrer allow-list. The production key is locked to the Render
- *  domain — if we tried to use it from localhost the embed iframe
- *  would render but the panorama would stay black (referrer 403),
- *  which looks broken even though everything else works. Detect these
- *  hosts and fall back to MapLibre even when the key env var is set. */
-const STREET_VIEW_BLOCKED_HOSTS = new Set([
-  'localhost',
-  '127.0.0.1',
-  '::1',
-]);
-
 const GameMap = dynamic(() => import('@/components/game/GameMap'), {
   ssr: false,
   loading: () => (
@@ -94,13 +82,13 @@ export default function PlayPage() {
 
   /** Whether to render the Street View embed. Defaults to "off" on the
    *  server / first paint so SSR + first-client-render match (no
-   *  hydration mismatch). useEffect flips it on after we've verified
-   *  the host isn't on the blocked list. */
+   *  hydration mismatch). useEffect flips it on once the key env var
+   *  is verified at runtime. User can also toggle manually via the
+   *  pill in the top-left of the stage if Street View is blocked or
+   *  unavailable for the current location. */
   const [useStreetView, setUseStreetView] = useState(false);
   useEffect(() => {
-    if (!HAS_STREET_VIEW_KEY) return;
-    const host = window.location.hostname;
-    if (!STREET_VIEW_BLOCKED_HOSTS.has(host)) setUseStreetView(true);
+    if (HAS_STREET_VIEW_KEY) setUseStreetView(true);
   }, []);
   useEffect(() => {
     try {
@@ -428,10 +416,11 @@ export default function PlayPage() {
               // STREET_VIEW_FEED · BANGKOK.GRID · MISSION_{String(idx + 1).padStart(2, '0')}
             </div>
 
-            {/* STREET VIEW or fallback MAP — Street View only renders
-                when (a) the API key env var is set AND (b) we're on a
-                host that's on the key's referrer allow-list (i.e. not
-                localhost, see STREET_VIEW_BLOCKED_HOSTS above). */}
+            {/* STREET VIEW or MAP view. Default: Street View when the
+                API key is present. User can flip back to MapLibre via
+                the toggle pill below if Street View is blocked /
+                blank / their key's referrer restrictions exclude this
+                host. */}
             {useStreetView ? (
               <StreetViewWalker
                 initialLat={cur.location.lat}
@@ -441,10 +430,39 @@ export default function PlayPage() {
             ) : (
               <div className="absolute inset-0">
                 <GameMap />
-                <div className="absolute top-10 left-3.5 z-[5]">
-                  <Pill variant="gold">▸ FALLBACK_MAP</Pill>
-                </div>
               </div>
+            )}
+
+            {/* View-mode toggle — top-left, above stage label. Clicking
+                swaps between Street View and the top-down MapLibre
+                map. Disabled (greyed) when there's no API key at all,
+                since there's nothing to toggle to. */}
+            {HAS_STREET_VIEW_KEY && (
+              <button
+                type="button"
+                onClick={() => setUseStreetView((v) => !v)}
+                title={
+                  useStreetView
+                    ? 'Switch to top-down map (if Street View is blank)'
+                    : 'Switch back to Street View'
+                }
+                className="absolute top-10 left-3.5 z-[6] flex items-center gap-1.5 px-3 py-1 font-display font-bold text-[10px] tracking-cyber transition hover:bg-cyber-cyan/15 cursor-pointer"
+                style={{
+                  background: useStreetView
+                    ? 'rgba(34,211,238,0.10)'
+                    : 'rgba(251,191,36,0.10)',
+                  border: `1px solid ${useStreetView ? 'rgba(34,211,238,0.55)' : 'rgba(251,191,36,0.55)'}`,
+                  color: useStreetView ? 'var(--cy-cyan)' : 'var(--cy-gold)',
+                  clipPath:
+                    'polygon(7px 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 7px 100%, 0 50%)',
+                  boxShadow: useStreetView
+                    ? '0 0 10px rgba(34,211,238,0.3)'
+                    : '0 0 10px rgba(251,191,36,0.3)',
+                }}
+              >
+                {useStreetView ? '▸ STREET_VIEW' : '▸ MAP_VIEW'}
+                <span className="text-[9px] opacity-70">[ swap ]</span>
+              </button>
             )}
 
             {/* Skill flash overlay */}
