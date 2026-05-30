@@ -346,16 +346,19 @@ export default function PlayPage() {
 
         {/* ─── MAIN — left sidebar + center street view. Grid swaps to
             single-column when sidebar is collapsed so the map fills
-            the row. Mobile (below lg) always stacks. */}
+            the row. Mobile (below lg) hides the sidebar entirely —
+            INTEL + SKILL overlays float on top of the map stage
+            instead, keeping the hunt screen immersive. */}
         <div
           className={`grid gap-3 flex-1 min-h-0 pb-20 lg:pb-0 ${
             sidebarCollapsed ? 'lg:grid-cols-[1fr]' : 'lg:grid-cols-[280px_1fr]'
           }`}
         >
-          {/* ─── LEFT SIDEBAR — fully hidden when collapsed ─── */}
+          {/* ─── LEFT SIDEBAR — desktop only. Mobile gets the
+              floating overlays inside the stage. ─── */}
           <div
-            className={`flex-col gap-3 order-2 lg:order-1 ${
-              sidebarCollapsed ? 'hidden' : 'flex'
+            className={`flex-col gap-3 order-2 lg:order-1 hidden ${
+              sidebarCollapsed ? 'lg:hidden' : 'lg:flex'
             }`}
           >
             {/* INTEL_BRIEFING */}
@@ -548,6 +551,21 @@ export default function PlayPage() {
               </div>
             )}
 
+            {/* ─── MOBILE-ONLY OVERLAYS — INTEL chip + SKILL float ─── */}
+            <MobileIntelChip
+              clues={visibleClues}
+              totalClues={cur.location.clues.length}
+              onHint={onHint}
+              canHint={visibleClues.length < cur.location.clues.length}
+            />
+            <MobileSkillButton
+              skillName={pet.skill.name}
+              cooldown={pet.skill.cooldown}
+              petEmoji={petMeta.emoji}
+              ready={petSkillReady()}
+              onUse={onSkill}
+            />
+
             {/* PLAYER SCORE BADGE — top-left */}
             <PlayerScoreBadge
               side="left"
@@ -695,6 +713,145 @@ function PlayerScoreBadge({ side, tribeEmoji, name, score, accent }: BadgeProps)
         SCORE {score.toLocaleString()}
       </span>
     </div>
+  );
+}
+
+/* ─── Mobile-only overlays — keep /play immersive on phones where
+   the sidebar would otherwise eat half the screen ─── */
+
+interface MobileIntelChipProps {
+  clues: string[];
+  totalClues: number;
+  onHint: () => void;
+  canHint: boolean;
+}
+
+/** Mobile INTEL_BRIEFING — collapsible chip pinned to the top of
+ *  the map stage. Collapsed = "INTEL 1/3 ▼", expanded = full clue
+ *  cards inline. Hidden on lg+ where the desktop sidebar shows
+ *  the full briefing panel. */
+function MobileIntelChip({ clues, totalClues, onHint, canHint }: MobileIntelChipProps) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="lg:hidden absolute top-2 left-2 right-2 z-[7]">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-2 px-3 py-2 text-left transition hover:bg-cyber-violet/10"
+        style={{
+          background: 'rgba(5,3,10,0.92)',
+          border: '1px solid rgba(167,139,250,0.55)',
+          clipPath:
+            'polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px)',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
+        <span className="w-1.5 h-1.5 bg-cyber-violet rounded-full animate-pulse-dot shrink-0" />
+        <span className="font-display text-[10px] text-cyber-violet font-bold tracking-cyber">
+          INTEL
+        </span>
+        <span className="font-mono text-[9px] text-white/55 tabular-nums">
+          {clues.length}/{totalClues}
+        </span>
+        <span className="flex-1" />
+        <span className="font-display text-cyber-violet text-[14px] leading-none">
+          {open ? '▴' : '▾'}
+        </span>
+      </button>
+      {open && (
+        <div
+          className="mt-1.5 px-3 py-2 flex flex-col gap-1.5"
+          style={{
+            background: 'rgba(5,3,10,0.92)',
+            border: '1px solid rgba(167,139,250,0.35)',
+            clipPath:
+              'polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px)',
+            backdropFilter: 'blur(8px)',
+            maxHeight: '40vh',
+            overflowY: 'auto',
+          }}
+        >
+          {clues.map((c, i) => (
+            <div
+              key={i}
+              className="px-2 py-1.5"
+              style={{
+                background: 'rgba(167,139,250,0.08)',
+                borderLeft: '2px solid #A78BFA',
+              }}
+            >
+              <div className="font-mono text-[8px] text-cyber-violet mb-0.5">
+                ▸ CLUE_0{i + 1}
+              </div>
+              <div className="text-[11px] leading-[1.45]">{c}</div>
+            </div>
+          ))}
+          {canHint && (
+            <button
+              type="button"
+              onClick={onHint}
+              className="w-full px-2 py-1.5 text-center font-mono text-[9px] text-cyber-violet/85 hover:text-cyber-violet transition"
+              style={{
+                background: 'rgba(0,0,0,0.4)',
+                border: '1px dashed rgba(167,139,250,0.35)',
+              }}
+            >
+              ▸ DECRYPT_CLUE_{String(clues.length + 1).padStart(2, '0')} · 50CR
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface MobileSkillButtonProps {
+  skillName: string;
+  cooldown: number;
+  petEmoji: string;
+  ready: boolean;
+  onUse: () => void;
+}
+
+/** Mobile companion-skill trigger — circular floating button at the
+ *  bottom-left of the map stage. Stays out of the way of the
+ *  player + opponent badges at the top + the FIRE bar at the bottom. */
+function MobileSkillButton({
+  skillName,
+  cooldown,
+  petEmoji,
+  ready,
+  onUse,
+}: MobileSkillButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onUse}
+      disabled={!ready}
+      title={`${skillName} · ${cooldown}s CD`}
+      className="lg:hidden absolute bottom-3 left-3 z-[7] flex flex-col items-center justify-center transition disabled:opacity-40 disabled:cursor-not-allowed"
+      style={{
+        width: 54,
+        height: 54,
+        background: ready
+          ? 'rgba(34,211,238,0.18)'
+          : 'rgba(34,211,238,0.06)',
+        border: `2px solid ${ready ? 'var(--cy-cyan)' : 'rgba(34,211,238,0.35)'}`,
+        borderRadius: '50%',
+        boxShadow: ready
+          ? '0 0 18px rgba(34,211,238,0.55)'
+          : 'none',
+        backdropFilter: 'blur(6px)',
+      }}
+    >
+      <span className="text-[20px] leading-none">{petEmoji}</span>
+      <span
+        className="font-mono text-[7px] tracking-cyber mt-0.5"
+        style={{ color: ready ? 'var(--cy-cyan)' : 'rgba(255,255,255,0.45)' }}
+      >
+        {ready ? 'READY' : `${cooldown}s`}
+      </span>
+    </button>
   );
 }
 
