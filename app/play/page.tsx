@@ -344,6 +344,28 @@ export default function PlayPage() {
           </button>
         </div>
 
+        {/* ─── VS STRIP — player vs opponent scores. Sits outside
+            the map stage iframe so it doesn't collide with Google
+            Street View's own "View on Google Maps" overlay at the
+            top-left of the embed. */}
+        <div className="flex items-center gap-2">
+          <ScoreBadgeInline
+            tribeEmoji={tribe.emoji}
+            name={player.nickname.toUpperCase().replace(/ /g, '_')}
+            score={runScoreSoFar}
+            accent="cyan"
+          />
+          <span className="font-display text-[10px] text-white/40 tracking-widest2">
+            VS
+          </span>
+          <ScoreBadgeInline
+            tribeEmoji={opponent.tribeEmoji}
+            name={opponent.name}
+            score={opponentScore}
+            accent="red"
+          />
+        </div>
+
         {/* ─── MAIN — left sidebar + center street view. Grid swaps to
             single-column when sidebar is collapsed so the map fills
             the row. Mobile (below lg) hides the sidebar entirely —
@@ -523,14 +545,15 @@ export default function PlayPage() {
                     ? 'Switch to top-down map (if Street View is blank)'
                     : 'Switch back to Street View'
                 }
-                className="absolute left-3 z-[6] flex items-center justify-center transition hover:scale-105 cursor-pointer"
+                className="absolute z-[6] flex items-center justify-center transition hover:scale-105 cursor-pointer"
                 style={{
-                  // Mobile: 36x36 icon-only square — no text. The
-                  // long "▸ STREET_VIEW [ swap ]" pill was clipping
-                  // through the Google Maps watermark + crowding the
-                  // top-left. Desktop keeps inline padding via the
-                  // sibling `lg:` overrides below.
-                  top: 52,
+                  // Top-right of the stage — Street View's own "View
+                  // on Google Maps" overlay sits in the top-left
+                  // corner of the embed and there's no way to hide it
+                  // cross-origin, so we keep our toggle off in the
+                  // other corner.
+                  top: 10,
+                  right: 10,
                   width: 36,
                   height: 36,
                   background: useStreetView
@@ -590,25 +613,10 @@ export default function PlayPage() {
               onUse={onSkill}
             />
 
-            {/* PLAYER SCORE BADGE — top-left */}
-            <PlayerScoreBadge
-              side="left"
-              tribeEmoji={tribe.emoji}
-              name={player.nickname.toUpperCase().replace(/ /g, '_')}
-              score={runScoreSoFar}
-              accent="cyan"
-            />
-
-            {/* OPPONENT SCORE BADGE — top-right. Uses the rolled
-                opponent's name + tribe so the player sees a different
-                rival each match. */}
-            <PlayerScoreBadge
-              side="right"
-              tribeEmoji={opponent.tribeEmoji}
-              name={opponent.name}
-              score={opponentScore}
-              accent="red"
-            />
+            {/* Player + Opponent score badges are now rendered in the
+                VS strip above the stage (outside the iframe), so they
+                no longer collide with Google's "View on Google Maps"
+                overlay at the top-left of Street View embeds. */}
 
             {/* Zoom / pan tools dropped — they were stubs that just
                 toasted RESERVED and added visual noise. Real
@@ -697,6 +705,57 @@ interface BadgeProps {
   accent: 'cyan' | 'red';
 }
 
+interface InlineBadgeProps {
+  tribeEmoji: string;
+  name: string;
+  score: number;
+  accent: 'cyan' | 'red';
+}
+
+/** Inline score badge for the VS strip above the stage — flexbox
+ *  friendly (no absolute positioning). Renders the tribe icon, name,
+ *  and live score in a compact hex pill that scales down on mobile. */
+function ScoreBadgeInline({ tribeEmoji, name, score, accent }: InlineBadgeProps) {
+  const colour = accent === 'cyan' ? '#22D3EE' : '#FD1803';
+  const glow =
+    accent === 'cyan' ? 'rgba(34,211,238,0.45)' : 'rgba(253,24,3,0.45)';
+  return (
+    <div
+      className="flex items-center gap-1.5 px-2.5 py-1 min-w-0 flex-1"
+      style={{
+        background: 'rgba(5,3,10,0.85)',
+        border: `1px solid ${glow}`,
+        clipPath:
+          'polygon(7px 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 7px 100%, 0 50%)',
+        boxShadow: `0 0 8px ${glow}`,
+      }}
+    >
+      <span
+        className="flex items-center justify-center text-[12px] shrink-0"
+        style={{
+          width: 18,
+          height: 18,
+          borderRadius: '50%',
+          background: `${colour}33`,
+          border: `1px solid ${glow}`,
+        }}
+      >
+        {tribeEmoji}
+      </span>
+      <span
+        className="font-display text-[10px] font-bold tracking-cyber truncate"
+        style={{ color: colour }}
+      >
+        {name}
+      </span>
+      <span className="flex-1" />
+      <span className="font-mono text-[10px] text-white/70 tabular-nums shrink-0">
+        {score.toLocaleString()}
+      </span>
+    </div>
+  );
+}
+
 function PlayerScoreBadge({ side, tribeEmoji, name, score, accent }: BadgeProps) {
   const colour = accent === 'cyan' ? '#22D3EE' : '#FD1803';
   const glow = accent === 'cyan' ? 'rgba(34,211,238,0.45)' : 'rgba(253,24,3,0.45)';
@@ -760,13 +819,13 @@ function MobileIntelChip({ clues, totalClues, onHint, canHint }: MobileIntelChip
     <div
       className="lg:hidden absolute z-[7]"
       style={{
-        // Sits to the right of the 36x36 toggle pill (left: 12 + 36 + 8 gap = 56)
-        // and shares its top row (y=52), so the layout reads as one
-        // compact strip: [▢ toggle] [INTEL 1/3 ▾ ...]. Frees the whole
-        // area below for the actual map.
-        top: 52,
-        left: 56,
-        right: 8,
+        // Top-left of the stage — VS strip moved out so this corner
+        // is empty now. Leave room for Google's own "View on Google
+        // Maps" overlay (sits roughly y:0-32, x:0-160) by starting
+        // INTEL a hair lower / shifted right.
+        top: 10,
+        left: 10,
+        right: 56, // leave the toggle button's column free
       }}
     >
       <button
