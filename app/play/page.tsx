@@ -523,25 +523,46 @@ export default function PlayPage() {
                     ? 'Switch to top-down map (if Street View is blank)'
                     : 'Switch back to Street View'
                 }
-                className="absolute left-3.5 z-[6] flex items-center gap-1.5 px-3 py-1 font-display font-bold text-[10px] tracking-cyber transition hover:bg-cyber-cyan/15 cursor-pointer"
+                className="absolute left-3 z-[6] flex items-center justify-center transition hover:scale-105 cursor-pointer"
                 style={{
-                  // Moved below the player score badge (top:12, h:~32)
-                  // so they don't overlap. Same on mobile + desktop.
+                  // Mobile: 36x36 icon-only square — no text. The
+                  // long "▸ STREET_VIEW [ swap ]" pill was clipping
+                  // through the Google Maps watermark + crowding the
+                  // top-left. Desktop keeps inline padding via the
+                  // sibling `lg:` overrides below.
                   top: 52,
+                  width: 36,
+                  height: 36,
                   background: useStreetView
-                    ? 'rgba(34,211,238,0.10)'
-                    : 'rgba(251,191,36,0.10)',
+                    ? 'rgba(34,211,238,0.12)'
+                    : 'rgba(251,191,36,0.12)',
                   border: `1px solid ${useStreetView ? 'rgba(34,211,238,0.55)' : 'rgba(251,191,36,0.55)'}`,
                   color: useStreetView ? 'var(--cy-cyan)' : 'var(--cy-gold)',
                   clipPath:
-                    'polygon(7px 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 7px 100%, 0 50%)',
+                    'polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%)',
                   boxShadow: useStreetView
                     ? '0 0 10px rgba(34,211,238,0.3)'
                     : '0 0 10px rgba(251,191,36,0.3)',
+                  backdropFilter: 'blur(6px)',
                 }}
+                aria-label={
+                  useStreetView ? 'Switch to map view' : 'Switch to Street View'
+                }
               >
-                {useStreetView ? '▸ STREET_VIEW' : '▸ MAP_VIEW'}
-                <span className="text-[9px] opacity-70">[ swap ]</span>
+                {/* Icon-only — swap silhouette tells the affordance */}
+                {useStreetView ? (
+                  // Map pin icon — current is street view, tapping → map
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                ) : (
+                  // Street view eye / panorama icon — current is map, tapping → SV
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
               </button>
             )}
 
@@ -737,12 +758,15 @@ function MobileIntelChip({ clues, totalClues, onHint, canHint }: MobileIntelChip
   const [open, setOpen] = useState(true);
   return (
     <div
-      className="lg:hidden absolute left-2 right-2 z-[7]"
+      className="lg:hidden absolute z-[7]"
       style={{
-        // 52 (toggle pill top) + 28 (its height) + 8 (gap) = 88px.
-        // Sits just under the STREET_VIEW/MAP_VIEW toggle pill so
-        // nothing overlaps the player score badge at the top.
-        top: 88,
+        // Sits to the right of the 36x36 toggle pill (left: 12 + 36 + 8 gap = 56)
+        // and shares its top row (y=52), so the layout reads as one
+        // compact strip: [▢ toggle] [INTEL 1/3 ▾ ...]. Frees the whole
+        // area below for the actual map.
+        top: 52,
+        left: 56,
+        right: 8,
       }}
     >
       <button
