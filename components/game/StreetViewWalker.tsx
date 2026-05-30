@@ -50,9 +50,10 @@ export function StreetViewWalker({
   const [pos, setPos] = useState({ lat: initialLat, lng: initialLng });
   const [heading, setHeading] = useState(initialHeading);
   const [activeIframe, setActiveIframe] = useState<0 | 1>(0);
-  const [srcA, setSrcA] = useState(() =>
-    buildSVUrl(apiKey, initialLat, initialLng, initialHeading),
-  );
+  // Initial srcA empty — the useEffect below resolves the nearest
+  // outdoor pano via the metadata API and sets it. Prevents the
+  // first frame from being an indoor business pano.
+  const [srcA, setSrcA] = useState('');
   const [srcB, setSrcB] = useState('');
   const [isStepping, setIsStepping] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,9 +61,30 @@ export function StreetViewWalker({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const pendingSwapRef = useRef<(() => void) | null>(null);
 
-  // Notify parent of initial position once.
+  // Snap initial position to the nearest outdoor Street View pano.
+  // Embed API ignores source=outdoor so we have to look up the pano
+  // ourselves via the (free) metadata endpoint and embed by pano_id.
   useEffect(() => {
-    onPositionChange?.(initialLat, initialLng, initialHeading);
+    let cancelled = false;
+    (async () => {
+      const url = await resolveOutdoorSVUrl(
+        apiKey,
+        initialLat,
+        initialLng,
+        initialHeading,
+      );
+      if (cancelled) return;
+      setSrcA(url.embedUrl);
+      if (url.snappedLat != null && url.snappedLng != null) {
+        setPos({ lat: url.snappedLat, lng: url.snappedLng });
+        onPositionChange?.(url.snappedLat, url.snappedLng, initialHeading);
+      } else {
+        onPositionChange?.(initialLat, initialLng, initialHeading);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -97,27 +119,33 @@ export function StreetViewWalker({
     [pos.lat, pos.lng, heading, isStepping],
   );
 
-  function loadIntoInactive(lat: number, lng: number, hdg: number) {
-    const url = buildSVUrl(apiKey, lat, lng, hdg);
+  async function loadIntoInactive(lat: number, lng: number, hdg: number) {
     setIsStepping(true);
     setError(null);
 
+    // Resolve to the nearest outdoor pano. Stays on roads as the
+    // player walks; if they happen to step into a building footprint
+    // the metadata API snaps back to the closest road-side pano.
+    const resolved = await resolveOutdoorSVUrl(apiKey, lat, lng, hdg);
+    const finalLat = resolved.snappedLat ?? lat;
+    const finalLng = resolved.snappedLng ?? lng;
+
     const inactive = activeIframe === 0 ? 1 : 0;
-    if (inactive === 0) setSrcA(url);
-    else setSrcB(url);
+    if (inactive === 0) setSrcA(resolved.embedUrl);
+    else setSrcB(resolved.embedUrl);
 
     // Watchdog — if the inactive iframe doesn't fire onLoad within 5s
     // (rare; cached or unreachable), force the swap anyway so the
     // player isn't stuck.
     const timeout = window.setTimeout(() => {
       pendingSwapRef.current = null;
-      commitSwap(lat, lng, hdg);
+      commitSwap(finalLat, finalLng, hdg);
     }, 5000);
 
     pendingSwapRef.current = () => {
       window.clearTimeout(timeout);
       pendingSwapRef.current = null;
-      commitSwap(lat, lng, hdg);
+      commitSwap(finalLat, finalLng, hdg);
     };
   }
 
@@ -275,30 +303,82 @@ export function StreetViewWalker({
   );
 }
 
-function buildSVUrl(
+interface ResolvedSVUrl {
+  embedUrl: string;
+  /** Snapped pano coords from metadata, if found. Null when we
+   *  fell back to plain location embed (no outdoor pano nearby). */
+  snappedLat: number | null;
+  snappedLng: number | null;
+}
+
+/**
+ * Resolve target coords to the nearest OUTDOOR Street View pano
+ * via the metadata API (free, no usage cost). Returns an embed URL
+ * that uses pano=ID so the panorama Google serves is the one we
+ * picked, not an indoor business pano nearby.
+ *
+ * Fallback path (rare — metadata returns ZERO_RESULTS for the
+ * radius): falls back to plain location embed. Indoor pano risk
+ * returns but at least the iframe still renders something.
+ */
+async function resolveOutdoorSVUrl(
   key: string | undefined,
   lat: number,
   lng: number,
   heading: number,
-): string {
-  if (!key) return 'about:blank';
+): Promise<ResolvedSVUrl> {
+  if (!key) {
+    return { embedUrl: 'about:blank', snappedLat: null, snappedLng: null };
+  }
+
+  try {
+    const metaParams = new URLSearchParams({
+      location: `${lat},${lng}`,
+      // source=outdoor is honoured by the metadata API even though
+      // the embed API ignores it — that's the whole reason we route
+      // through metadata first.
+      source: 'outdoor',
+      radius: '300',
+      key,
+    });
+    const metaRes = await fetch(
+      `https://maps.googleapis.com/maps/api/streetview/metadata?${metaParams.toString()}`,
+    );
+    const meta = (await metaRes.json()) as {
+      status?: string;
+      pano_id?: string;
+      location?: { lat: number; lng: number };
+    };
+    if (meta.status === 'OK' && meta.pano_id) {
+      const params = new URLSearchParams({
+        key,
+        pano: meta.pano_id,
+        heading: heading.toString(),
+        pitch: '0',
+        fov: '90',
+      });
+      return {
+        embedUrl: `https://www.google.com/maps/embed/v1/streetview?${params.toString()}`,
+        snappedLat: meta.location?.lat ?? null,
+        snappedLng: meta.location?.lng ?? null,
+      };
+    }
+  } catch {
+    /* network / CORS issue — fall through to plain embed */
+  }
+
+  // Fallback: location-based embed (may pick indoor pano if that's
+  // the closest match Google has).
   const params = new URLSearchParams({
     key,
     location: `${lat},${lng}`,
     heading: heading.toString(),
     pitch: '0',
     fov: '90',
-    // source=outdoor restricts panoramas to outdoor public-road shots
-    // only — skips indoor business "trekker" panoramas (mall
-    // interiors, restaurant insides) that user complained were
-    // disorienting to guess inside of. The Embed API honours the
-    // same `source` keys as the JS / Static Street View APIs.
-    source: 'outdoor',
-    // radius=200m widens the search ring so a target coord that
-    // falls slightly inside a building snaps out to the nearest
-    // street-side panorama instead of failing or surfacing an
-    // indoor business pano.
-    radius: '200',
   });
-  return `https://www.google.com/maps/embed/v1/streetview?${params.toString()}`;
+  return {
+    embedUrl: `https://www.google.com/maps/embed/v1/streetview?${params.toString()}`,
+    snappedLat: null,
+    snappedLng: null,
+  };
 }
