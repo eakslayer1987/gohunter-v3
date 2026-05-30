@@ -523,8 +523,11 @@ export default function PlayPage() {
                     ? 'Switch to top-down map (if Street View is blank)'
                     : 'Switch back to Street View'
                 }
-                className="absolute top-10 left-3.5 z-[6] flex items-center gap-1.5 px-3 py-1 font-display font-bold text-[10px] tracking-cyber transition hover:bg-cyber-cyan/15 cursor-pointer"
+                className="absolute left-3.5 z-[6] flex items-center gap-1.5 px-3 py-1 font-display font-bold text-[10px] tracking-cyber transition hover:bg-cyber-cyan/15 cursor-pointer"
                 style={{
+                  // Moved below the player score badge (top:12, h:~32)
+                  // so they don't overlap. Same on mobile + desktop.
+                  top: 52,
                   background: useStreetView
                     ? 'rgba(34,211,238,0.10)'
                     : 'rgba(251,191,36,0.10)',
@@ -733,7 +736,15 @@ interface MobileIntelChipProps {
 function MobileIntelChip({ clues, totalClues, onHint, canHint }: MobileIntelChipProps) {
   const [open, setOpen] = useState(true);
   return (
-    <div className="lg:hidden absolute top-2 left-2 right-2 z-[7]">
+    <div
+      className="lg:hidden absolute left-2 right-2 z-[7]"
+      style={{
+        // 52 (toggle pill top) + 28 (its height) + 8 (gap) = 88px.
+        // Sits just under the STREET_VIEW/MAP_VIEW toggle pill so
+        // nothing overlaps the player score badge at the top.
+        top: 88,
+      }}
+    >
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
