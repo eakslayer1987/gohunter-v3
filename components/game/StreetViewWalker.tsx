@@ -312,14 +312,21 @@ interface ResolvedSVUrl {
 }
 
 /**
- * Resolve target coords to the nearest OUTDOOR Street View pano
- * via the metadata API (free, no usage cost). Returns an embed URL
- * that uses pano=ID so the panorama Google serves is the one we
- * picked, not an indoor business pano nearby.
+ * Resolve target coords to an OUTDOOR Street View pano.
  *
- * Fallback path (rare — metadata returns ZERO_RESULTS for the
- * radius): falls back to plain location embed. Indoor pano risk
- * returns but at least the iframe still renders something.
+ * Strategy: use Metadata API (if the key permits it) to find the
+ * nearest outdoor pano's COORDINATES, then embed by `location=lat,lng`
+ * using those snapped coords. Embed-by-location is the only path
+ * the user's referrer-restricted Maps Embed API key actually accepts
+ * — embed-by-pano_id (the previous approach) requires Street View
+ * Static API access which most Embed API keys aren't enabled for,
+ * and Google returns:
+ *   "Google Maps Platform rejected your request. This IP, site or
+ *    mobile application is not authorized to use this API key."
+ *
+ * If the Metadata API also rejects (same key, same restrictions),
+ * we fall back to the original lat/lng — Street View still loads;
+ * we just lose the outdoor snap.
  */
 async function resolveOutdoorSVUrl(
   key: string | undefined,
@@ -331,12 +338,15 @@ async function resolveOutdoorSVUrl(
     return { embedUrl: 'about:blank', snappedLat: null, snappedLng: null };
   }
 
+  let snappedLat: number | null = null;
+  let snappedLng: number | null = null;
+
+  // Optional snap step — non-fatal. If the key isn't enabled for the
+  // Street View Static API (which the metadata endpoint belongs to),
+  // this returns REQUEST_DENIED and we just use the original coords.
   try {
     const metaParams = new URLSearchParams({
       location: `${lat},${lng}`,
-      // source=outdoor is honoured by the metadata API even though
-      // the embed API ignores it — that's the whole reason we route
-      // through metadata first.
       source: 'outdoor',
       radius: '300',
       key,
@@ -346,39 +356,28 @@ async function resolveOutdoorSVUrl(
     );
     const meta = (await metaRes.json()) as {
       status?: string;
-      pano_id?: string;
       location?: { lat: number; lng: number };
     };
-    if (meta.status === 'OK' && meta.pano_id) {
-      const params = new URLSearchParams({
-        key,
-        pano: meta.pano_id,
-        heading: heading.toString(),
-        pitch: '0',
-        fov: '90',
-      });
-      return {
-        embedUrl: `https://www.google.com/maps/embed/v1/streetview?${params.toString()}`,
-        snappedLat: meta.location?.lat ?? null,
-        snappedLng: meta.location?.lng ?? null,
-      };
+    if (meta.status === 'OK' && meta.location) {
+      snappedLat = meta.location.lat;
+      snappedLng = meta.location.lng;
     }
   } catch {
-    /* network / CORS issue — fall through to plain embed */
+    /* network / CORS — keep original coords */
   }
 
-  // Fallback: location-based embed (may pick indoor pano if that's
-  // the closest match Google has).
+  const useLat = snappedLat ?? lat;
+  const useLng = snappedLng ?? lng;
   const params = new URLSearchParams({
     key,
-    location: `${lat},${lng}`,
+    location: `${useLat},${useLng}`,
     heading: heading.toString(),
     pitch: '0',
     fov: '90',
   });
   return {
     embedUrl: `https://www.google.com/maps/embed/v1/streetview?${params.toString()}`,
-    snappedLat: null,
-    snappedLng: null,
+    snappedLat,
+    snappedLng,
   };
 }
