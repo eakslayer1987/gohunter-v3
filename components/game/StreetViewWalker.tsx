@@ -288,6 +288,17 @@ function buildSVUrl(
     heading: heading.toString(),
     pitch: '0',
     fov: '90',
+    // source=outdoor restricts panoramas to outdoor public-road shots
+    // only — skips indoor business "trekker" panoramas (mall
+    // interiors, restaurant insides) that user complained were
+    // disorienting to guess inside of. The Embed API honours the
+    // same `source` keys as the JS / Static Street View APIs.
+    source: 'outdoor',
+    // radius=200m widens the search ring so a target coord that
+    // falls slightly inside a building snaps out to the nearest
+    // street-side panorama instead of failing or surfacing an
+    // indoor business pano.
+    radius: '200',
   });
   return `https://www.google.com/maps/embed/v1/streetview?${params.toString()}`;
 }
